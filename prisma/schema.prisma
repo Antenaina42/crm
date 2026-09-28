@@ -1,0 +1,673 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum RoleType {
+  SUPER_ADMIN
+  ADMIN
+  COMMERCIAL
+  ACCOUNTANT
+  PROJECT_MANAGER
+}
+
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  password     String
+  role         RoleType      @default(ADMIN)
+  phone        String?
+  avatar       String?
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  prospects    Prospect[]
+  projects     Project[]
+  tasks        Task[]
+  notifications Notification[]
+  activityLogs ActivityLog[]
+
+  @@map("users")
+}
+
+enum ProspectStatus {
+  NOUVEAU
+  CONTACTE
+  INTERESSE
+  OFFRE_A_PREPARER
+  OFFRE_ENVOYEE
+  RELANCE
+  NEGOCIATION
+  GAGNE
+  PERDU
+}
+
+model Prospect {
+  id              String         @id @default(cuid())
+  firstName       String
+  lastName        String
+  company         String?
+  phone           String
+  whatsapp        String?
+  email           String?
+  address         String?
+  city            String?        @default("Antananarivo")
+  sector          String?
+  source          String?
+  website         String?
+  facebook        String?
+  instagram       String?
+  linkedin        String?
+  needType        String?
+  estimatedBudget Float?
+  status          ProspectStatus @default(NOUVEAU)
+  notes           String?        @db.Text
+  assignedToId    String?
+  assignedTo      User?          @relation(fields: [assignedToId], references: [id])
+  convertedClientId String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  offers          Offer[]
+  proformas       Proforma[]
+
+  @@map("prospects")
+}
+
+enum ClientStatus {
+  ACTIF
+  INACTIF
+  EN_ATTENTE
+}
+
+model Client {
+  id             String       @id @default(cuid())
+  name           String
+  company        String
+  phone          String
+  whatsapp       String?
+  email          String
+  address        String?
+  city           String?      @default("Antananarivo")
+  nif            String?
+  stat           String?
+  website        String?
+  notes          String?      @db.Text
+  status         ClientStatus @default(ACTIF)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  contacts       Contact[]
+  projects       Project[]
+  offers         Offer[]
+  proformas      Proforma[]
+  contracts      Contract[]
+  invoices       Invoice[]
+  payments       Payment[]
+  domains        Domain[]
+  hostings       Hosting[]
+  documents      Document[]
+  activityLogs   ActivityLog[]
+  calendarEvents CalendarEvent[]
+
+  @@map("clients")
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name      String
+  role      String?
+  email     String?
+  phone     String?
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("contacts")
+}
+
+model OfferCatalog {
+  id          String             @id @default(cuid())
+  name        String
+  description String?            @db.Text
+  category    String
+  basePrice   Float
+  duration    String?
+  included    String?            @db.Text
+  options     String?            @db.Text
+  conditions  String?            @db.Text
+  currency    String             @default("Ar")
+  active      Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@map("offer_catalogs")
+}
+
+enum OfferStatus {
+  BROUILLON
+  ENVOYEE
+  ACCEPTEE
+  REFUSEE
+  EXPIREE
+}
+
+model Offer {
+  id             String       @id @default(cuid())
+  offerNumber    String       @unique
+  title          String
+  prospectId     String?
+  prospect       Prospect?    @relation(fields: [prospectId], references: [id])
+  clientId       String?
+  client         Client?      @relation(fields: [clientId], references: [id])
+  status         OfferStatus  @default(BROUILLON)
+  subtotal       Float
+  discount       Float        @default(0)
+  total          Float
+  depositPercent Float        @default(50)
+  depositAmount  Float
+  remainderAmount Float
+  currency       String       @default("Ar")
+  validityDate   DateTime?
+  notes          String?      @db.Text
+  terms          String?      @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  items          OfferItem[]
+
+  @@map("offers")
+}
+
+model OfferItem {
+  id          String   @id @default(cuid())
+  offerId     String
+  offer       Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  description String   @db.Text
+  quantity    Int      @default(1)
+  unitPrice   Float
+  total       Float
+
+  @@map("offer_items")
+}
+
+enum ProformaStatus {
+  BROUILLON
+  ENVOYEE
+  ACCEPTEE
+  CONVERTIE
+  ANNULEE
+}
+
+model Proforma {
+  id             String         @id @default(cuid())
+  proformaNumber String         @unique
+  clientId       String?
+  client         Client?        @relation(fields: [clientId], references: [id])
+  prospectId     String?
+  prospect       Prospect?      @relation(fields: [prospectId], references: [id])
+  date           DateTime       @default(now())
+  validityDate   DateTime?
+  subtotal       Float
+  discount       Float          @default(0)
+  total          Float
+  depositPercent Float          @default(50)
+  depositAmount  Float
+  remainderAmount Float
+  currency       String         @default("Ar")
+  conditions     String?        @db.Text
+  notes          String?        @db.Text
+  status         ProformaStatus @default(BROUILLON)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  items          ProformaItem[]
+
+  @@map("proformas")
+}
+
+model ProformaItem {
+  id          String   @id @default(cuid())
+  proformaId  String
+  proforma    Proforma @relation(fields: [proformaId], references: [id], onDelete: Cascade)
+  description String   @db.Text
+  quantity    Int      @default(1)
+  unitPrice   Float
+  total       Float
+
+  @@map("proforma_items")
+}
+
+enum InvoiceStatus {
+  BROUILLON
+  ENVOYEE
+  PARTIELLEMENT_PAYEE
+  PAYEE
+  EN_RETARD
+  ANNULEE
+}
+
+enum InvoiceType {
+  STANDARD
+  ACOMPTE
+  SOLDE
+}
+
+model Invoice {
+  id              String        @id @default(cuid())
+  invoiceNumber   String        @unique
+  baseNumber      String?
+  clientId        String
+  client          Client        @relation(fields: [clientId], references: [id])
+  type            InvoiceType   @default(STANDARD)
+  date            DateTime      @default(now())
+  dueDate         DateTime
+  subtotal        Float
+  vatRate         Float         @default(0)
+  vatAmount       Float         @default(0)
+  total           Float
+  depositPercent  Float         @default(50)
+  depositAmount   Float
+  remainingAmount Float
+  amountInWords   String?
+  currency        String        @default("Ar")
+  status          InvoiceStatus @default(BROUILLON)
+  paymentTerms    String?       @db.Text
+  notes           String?       @db.Text
+  signatureMiora  Boolean       @default(true)
+  signatureClient Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  items           InvoiceItem[]
+  payments        Payment[]
+  signatures      Signature[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String   @db.Text
+  quantity    Int      @default(1)
+  unitPrice   Float
+  total       Float
+
+  @@map("invoice_items")
+}
+
+enum PaymentMethod {
+  ESPECES
+  VIREMENT_BANCAIRE
+  MVOLA
+  ORANGE_MONEY
+  AIRTEL_MONEY
+  CHEQUE
+  AUTRE
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  paymentNumber String        @unique
+  invoiceId     String
+  invoice       Invoice       @relation(fields: [invoiceId], references: [id])
+  clientId      String
+  client        Client        @relation(fields: [clientId], references: [id])
+  amount        Float
+  date          DateTime      @default(now())
+  method        PaymentMethod @default(MVOLA)
+  reference     String?
+  notes         String?
+  createdAt     DateTime      @default(now())
+
+  @@map("payments")
+}
+
+enum ContractStatus {
+  BROUILLON
+  EN_ATTENTE_SIGNATURE
+  SIGNE
+  RESILIE
+  TERMINE
+}
+
+model ContractTemplate {
+  id        String     @id @default(cuid())
+  name      String
+  type      String
+  content   String     @db.LongText
+  variables String?    @db.Text
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  contracts Contract[]
+
+  @@map("contract_templates")
+}
+
+model Contract {
+  id                String          @id @default(cuid())
+  contractNumber    String          @unique
+  title             String
+  clientId          String
+  client            Client          @relation(fields: [clientId], references: [id])
+  projectId         String?
+  project           Project?        @relation(fields: [projectId], references: [id])
+  templateId        String?
+  template          ContractTemplate? @relation(fields: [templateId], references: [id])
+  content           String          @db.LongText
+  totalAmount       Float
+  depositAmount     Float
+  remainderAmount   Float
+  startDate         DateTime?
+  deliveryDate      DateTime?
+  status            ContractStatus  @default(BROUILLON)
+  signToken         String          @unique @default(uuid())
+  signedAt          DateTime?
+  signerName        String?
+  signerIp          String?
+  signatureHash     String?
+  signatureDataUrl  String?         @db.LongText
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  signatures        Signature[]
+
+  @@map("contracts")
+}
+
+model Signature {
+  id            String    @id @default(cuid())
+  contractId    String?
+  contract      Contract? @relation(fields: [contractId], references: [id])
+  invoiceId     String?
+  invoice       Invoice?  @relation(fields: [invoiceId], references: [id])
+  signerName    String
+  signerRole    String?
+  ipAddress     String?
+  userAgent     String?
+  documentHash  String
+  signatureData String    @db.LongText
+  signedAt      DateTime  @default(now())
+
+  @@map("signatures")
+}
+
+enum ProjectStatus {
+  A_DEMARRER
+  EN_PREPARATION
+  EN_DEVELOPPEMENT
+  EN_ATTENTE_CLIENT
+  CORRECTIONS
+  PRET_A_LIVRER
+  LIVRE
+  MAINTENANCE
+  TERMINE
+}
+
+model Project {
+  id                 String        @id @default(cuid())
+  projectNumber      String        @unique
+  title              String
+  clientId           String
+  client             Client        @relation(fields: [clientId], references: [id])
+  type               String
+  description        String?       @db.Text
+  startDate          DateTime      @default(now())
+  targetDeliveryDate DateTime?
+  actualDeliveryDate DateTime?
+  status             ProjectStatus @default(A_DEMARRER)
+  managerId          String?
+  manager            User?         @relation(fields: [managerId], references: [id])
+  totalAmount        Float
+  depositAmount      Float         @default(0)
+  remainderAmount    Float         @default(0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  tasks              Task[]
+  contracts          Contract[]
+  calendarEvents     CalendarEvent[]
+
+  @@map("projects")
+}
+
+enum TaskPriority {
+  BASSE
+  NORMALE
+  IMPORTANTE
+  URGENTE
+}
+
+enum TaskStatus {
+  A_FAIRE
+  EN_COURS
+  EN_REVUE
+  TERMINE
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  projectId   String
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  description String?      @db.Text
+  assigneeId  String?
+  assignee    User?        @relation(fields: [assigneeId], references: [id])
+  priority    TaskPriority @default(NORMALE)
+  status      TaskStatus   @default(A_FAIRE)
+  dueDate     DateTime?
+  order       Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("tasks")
+}
+
+enum AssetStatus {
+  ACTIF
+  EXPIRE_BIENTOT
+  EXPIRE
+}
+
+model Domain {
+  id             String      @id @default(cuid())
+  clientId       String
+  client         Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  domainName     String
+  extension      String      @default(".com")
+  registrar      String      @default("Namecheap / Hostinger")
+  purchaseDate   DateTime
+  expirationDate DateTime
+  costPrice      Float       @default(60000)
+  sellingPrice   Float       @default(300000)
+  status         AssetStatus @default(ACTIF)
+  autoRenew      Boolean     @default(true)
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@map("domains")
+}
+
+model Hosting {
+  id             String      @id @default(cuid())
+  clientId       String
+  client         Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  domainName     String
+  provider       String      @default("Hostinger Cloud")
+  plan           String      @default("Cloud Startup / VPS")
+  startDate      DateTime
+  expirationDate DateTime
+  costPrice      Float       @default(120000)
+  sellingPrice   Float       @default(300000)
+  margin         Float       @default(180000)
+  status         AssetStatus @default(ACTIF)
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@map("hostings")
+}
+
+enum ExpenseCategory {
+  HEBERGEMENT
+  DOMAINE
+  LOGICIELS
+  PUBLICITE
+  MATERIEL
+  SALAIRES
+  TRANSPORT
+  AUTRE
+}
+
+model Expense {
+  id          String          @id @default(cuid())
+  category    ExpenseCategory
+  amount      Float
+  date        DateTime        @default(now())
+  supplier    String
+  invoiceRef  String?
+  receiptUrl  String?
+  description String          @db.Text
+  createdAt   DateTime        @default(now())
+
+  @@map("expenses")
+}
+
+enum DocumentType {
+  OFFRE
+  PROFORMA
+  FACTURE
+  CONTRAT
+  RECU
+  FICHIER_CLIENT
+}
+
+model Document {
+  id        String       @id @default(cuid())
+  clientId  String
+  client    Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name      String
+  type      DocumentType
+  fileUrl   String
+  fileSize  String?
+  mimeType  String?      @default("application/pdf")
+  createdAt DateTime     @default(now())
+
+  @@map("documents")
+}
+
+enum NotificationType {
+  SIGNATURE
+  FACTURE
+  PAIEMENT
+  RETARD
+  EXPIRATION
+  OFFRE
+  TACHE
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String?
+  user      User?            @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      NotificationType
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@map("notifications")
+}
+
+model Reminder {
+  id           String    @id @default(cuid())
+  targetType   String
+  targetId     String
+  reminderDate DateTime
+  channel      String    @default("WHATSAPP")
+  status       String    @default("PENDING")
+  message      String    @db.Text
+  createdAt    DateTime  @default(now())
+
+  @@map("reminders")
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  clientId   String?
+  client     Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  details    String?  @db.Text
+  entityType String?
+  entityId   String?
+  createdAt  DateTime @default(now())
+
+  @@map("activity_logs")
+}
+
+model MessageTemplate {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  subject   String?
+  content   String   @db.Text
+  type      String   @default("WHATSAPP")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("message_templates")
+}
+
+model CalendarEvent {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  allDay      Boolean   @default(false)
+  type        String    @default("ECHEANCE")
+  clientId    String?
+  client      Client?   @relation(fields: [clientId], references: [id])
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@map("calendar_events")
+}
+
+model CompanySettings {
+  id                 String   @id @default(cuid())
+  companyName        String   @default("M-It LevelUp")
+  managerName        String   @default("Miora Antenaina RAZAKATIANA")
+  nif                String   @default("5019189714")
+  stat               String   @default("62011 11 2025 0 03126")
+  email              String   @default("razakatiana.antenaina@yahoo.com")
+  phone              String   @default("+261 34 54 038 98")
+  website            String   @default("https://m-itlevelup.com/")
+  address            String   @default("Lot : D79 Soalazaina Ambatolampy")
+  city               String   @default("Antananarivo 102")
+  country            String   @default("Madagascar")
+  defaultVatRate     Float    @default(0)
+  currency           String   @default("Ar")
+  invoicePrefix      String   @default("FAC-2026-")
+  proformaPrefix     String   @default("PRO-2026-")
+  contractPrefix     String   @default("CTR-2026-")
+  termsAndConditions String?  @db.Text
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("company_settings")
+}
