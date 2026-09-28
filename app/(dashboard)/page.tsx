@@ -1,18 +1,24 @@
 import { prisma } from "@/lib/prisma";
 import { DashboardView } from "@/components/dashboard/DashboardView";
 import { getCurrentUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { InvoiceStatus, ContractStatus, ProjectStatus, AssetStatus, ProspectStatus } from "@prisma/client";
 
 export const revalidate = 0; // Données temps réel
 
 export default async function DashboardPage() {
   const currentUser = await getCurrentUser();
-  const now = new Date();
-  const thirtyDaysLater = new Date();
-  thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+  if (!currentUser) {
+    redirect("/login");
+  }
 
-  const [
-    totalProspects,
+  try {
+    const now = new Date();
+    const thirtyDaysLater = new Date();
+    thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+
+    const [
+      totalProspects,
     interestedClients,
     sentOffers,
     sentProformas,
@@ -266,5 +272,40 @@ export default async function DashboardPage() {
     } : null,
   };
 
-  return <DashboardView data={dashboardData} />;
+    return <DashboardView data={dashboardData} />;
+  } catch (error: any) {
+    console.error("Erreur chargement dashboard:", error);
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-4">
+        <div className="max-w-lg w-full bg-white rounded-2xl shadow-lg border border-slate-200 p-6 space-y-4">
+          <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center font-bold text-xl">
+            ⚠️
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">
+              Connexion à la base de données en cours
+            </h2>
+            <p className="text-sm text-slate-600 mt-1">
+              L'application fonctionne, mais les données du CRM ne peuvent pas être chargées car la base de données MySQL n'a pas répondu ou les tables n'ont pas encore été importées.
+            </p>
+          </div>
+          <div className="p-3 bg-slate-50 rounded-xl text-xs font-mono text-slate-700 break-all">
+            Code: {error?.code || "DB_ERROR"} — {error?.message ? String(error.message).split("\n")[0] : "Erreur de connexion MySQL"}
+          </div>
+          <div className="text-xs text-slate-500 space-y-1">
+            <p className="font-semibold text-slate-700">Actions recommandées :</p>
+            <p>1. Vérifiez le fichier <code className="bg-slate-100 px-1 py-0.5 rounded">.env</code> sur Hostinger.</p>
+            <p>2. Assurez-vous d'avoir importé <code className="bg-slate-100 px-1 py-0.5 rounded">database_hostinger.sql</code> dans phpMyAdmin.</p>
+            <p>3. Consultez <a href="/api/health" className="text-brand-800 underline font-semibold">le diagnostic /api/health</a>.</p>
+          </div>
+          <a
+            href="/"
+            className="inline-block w-full py-2.5 bg-brand-800 text-white text-center font-bold text-sm rounded-xl hover:bg-brand-900 transition-colors"
+          >
+            Réessayer
+          </a>
+        </div>
+      </div>
+    );
+  }
 }

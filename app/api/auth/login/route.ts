@@ -34,8 +34,26 @@ export async function POST(req: NextRequest) {
       success: true,
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erreur login API:", error);
-    return NextResponse.json({ error: "Erreur serveur lors de la connexion" }, { status: 500 });
+    const code = error?.code;
+    let userMessage = "Erreur serveur lors de la connexion";
+
+    if (code === "P1001") {
+      userMessage = "Impossible de se connecter à MySQL. Vérifiez que MySQL est actif et accessible dans .env (host et port).";
+    } else if (code === "P1000") {
+      userMessage = "Échec d'authentification MySQL. Vérifiez l'utilisateur et le mot de passe dans .env.";
+    } else if (code === "P2021" || error?.message?.includes("doesn't exist")) {
+      userMessage = "Les tables de la base de données n'existent pas encore. Importez le fichier database_hostinger.sql dans phpMyAdmin.";
+    }
+
+    return NextResponse.json(
+      {
+        error: userMessage,
+        code: code || "DB_ERROR",
+        details: error?.message ? String(error.message).split("\n")[0] : undefined,
+      },
+      { status: 500 }
+    );
   }
 }

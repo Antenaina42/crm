@@ -56,18 +56,28 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       return data;
     }
 
-    // Si pas de cookie actif, retourner l'utilisateur admin par défaut pour faciliter le développement/démo
-    const defaultAdmin = await prisma.user.findFirst({
-      where: { role: "SUPER_ADMIN" },
-    });
+    // En production, un utilisateur sans cookie n'est pas authentifié
+    if (process.env.NODE_ENV === "production") {
+      return null;
+    }
 
-    if (defaultAdmin) {
-      return {
-        id: defaultAdmin.id,
-        name: defaultAdmin.name,
-        email: defaultAdmin.email,
-        role: defaultAdmin.role,
-      };
+    // En développement uniquement : fallback sur le premier SUPER_ADMIN pour simplifier les tests locaux
+    try {
+      const defaultAdmin = await prisma.user.findFirst({
+        where: { role: "SUPER_ADMIN" },
+      });
+
+      if (defaultAdmin) {
+        return {
+          id: defaultAdmin.id,
+          name: defaultAdmin.name,
+          email: defaultAdmin.email,
+          role: defaultAdmin.role,
+        };
+      }
+    } catch {
+      // Ignorer silencieusement si la base de données n'est pas joignable en local
+      return null;
     }
 
     return null;
