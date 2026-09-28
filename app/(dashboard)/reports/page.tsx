@@ -1,10 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { Download, BarChart3, Users, CreditCard, DollarSign, FileSpreadsheet } from "lucide-react";
 import { formatAriary } from "@/lib/formatters";
+import { getCurrentUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export const revalidate = 0;
 
 export default async function ReportsPage() {
+  const user = await getCurrentUser();
+  if (user && user.role === "COMMERCIAL") {
+    redirect("/");
+  }
+
   const [clientsCount, prospectsCount, invoicesCount, paymentsCount, expensesCount] = await Promise.all([
     prisma.client.count(),
     prisma.prospect.count(),

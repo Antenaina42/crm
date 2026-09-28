@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import {
   FolderArchive,
   FileText,
@@ -15,6 +17,11 @@ import { formatAriary, formatCurrency, formatDate } from "@/lib/formatters";
 export const revalidate = 0;
 
 export default async function DocumentsPage() {
+  const user = await getCurrentUser();
+  if (user && user.role === "COMMERCIAL") {
+    redirect("/");
+  }
+
   const [invoices, contracts, offers, proformas] = await Promise.all([
     prisma.invoice.findMany({ include: { client: true }, orderBy: { date: "desc" } }),
     prisma.contract.findMany({ include: { client: true }, orderBy: { createdAt: "desc" } }),

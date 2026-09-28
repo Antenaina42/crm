@@ -186,26 +186,37 @@ export function Header({
                   Nouvelle offre
                 </button>
                 <button
-                  onClick={() => router.push("/invoices?new=true")}
+                  onClick={() => router.push("/proformas?new=true")}
                   className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-800"
                 >
-                  <CreditCard className="w-4 h-4 text-amber-500" />
-                  Nouvelle facture
+                  <CreditCard className="w-4 h-4 text-cyan-500" />
+                  Nouvelle proforma
                 </button>
-                <button
-                  onClick={() => router.push("/projects?new=true")}
-                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-800"
-                >
-                  <Rocket className="w-4 h-4 text-purple-500" />
-                  Nouveau projet
-                </button>
-                <button
-                  onClick={() => router.push("/tasks?new=true")}
-                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-800"
-                >
-                  <CheckSquare className="w-4 h-4 text-emerald-500" />
-                  Nouvelle tâche
-                </button>
+                {currentUser?.role !== "COMMERCIAL" && (
+                  <>
+                    <button
+                      onClick={() => router.push("/invoices?new=true")}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-800"
+                    >
+                      <CreditCard className="w-4 h-4 text-amber-500" />
+                      Nouvelle facture
+                    </button>
+                    <button
+                      onClick={() => router.push("/projects?new=true")}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-800"
+                    >
+                      <Rocket className="w-4 h-4 text-purple-500" />
+                      Nouveau projet
+                    </button>
+                    <button
+                      onClick={() => router.push("/tasks?new=true")}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-800"
+                    >
+                      <CheckSquare className="w-4 h-4 text-emerald-500" />
+                      Nouvelle tâche
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -313,14 +324,27 @@ export function Header({
               className="flex items-center gap-2.5 p-1 rounded-xl hover:bg-slate-100 transition-colors"
             >
               <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-800 to-cyan-500 flex items-center justify-center text-white font-bold text-xs shadow-xs">
-                {currentUser?.name?.slice(0, 2).toUpperCase() || "MI"}
+                {currentUser?.name
+                  ? currentUser.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()
+                  : "MI"}
               </div>
               <div className="hidden lg:block text-left">
                 <div className="text-xs font-semibold text-slate-800 leading-tight">
                   {currentUser?.name || "Miora RAZAKATIANA"}
                 </div>
                 <div className="text-[10px] text-brand-700 font-medium">
-                  {currentUser?.role || "Super Admin"}
+                  {currentUser?.role === "COMMERCIAL"
+                    ? "Commercial"
+                    : currentUser?.role === "ADMIN"
+                    ? "Administrateur"
+                    : currentUser?.role === "SUPER_ADMIN"
+                    ? "Super Admin"
+                    : currentUser?.role || "Utilisateur"}
                 </div>
               </div>
             </button>
@@ -331,20 +355,29 @@ export function Header({
                 onClick={() => setProfileOpen(false)}
               >
                 <div className="px-3.5 py-2 border-b border-slate-100">
-                  <p className="text-xs font-semibold text-slate-900">
+                  <p className="text-xs font-semibold text-slate-900 truncate">
                     {currentUser?.name || "Miora Antenaina RAZAKATIANA"}
                   </p>
                   <p className="text-[11px] text-slate-400 truncate">
                     {currentUser?.email || "admin@m-itlevelup.com"}
                   </p>
+                  <span className="inline-block mt-1 px-2 py-0.5 text-[9px] font-bold rounded-full bg-brand-50 text-brand-800">
+                    {currentUser?.role === "COMMERCIAL"
+                      ? "Espace Commercial"
+                      : currentUser?.role === "ADMIN"
+                      ? "Administrateur"
+                      : "Super Admin"}
+                  </span>
                 </div>
-                <button
-                  onClick={() => router.push("/settings")}
-                  className="w-full flex items-center gap-2 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50"
-                >
-                  <UserIcon className="w-4 h-4 text-slate-400" />
-                  Paramètres du compte
-                </button>
+                {currentUser?.role !== "COMMERCIAL" && (
+                  <button
+                    onClick={() => router.push("/settings")}
+                    className="w-full flex items-center gap-2 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50"
+                  >
+                    <UserIcon className="w-4 h-4 text-slate-400" />
+                    Paramètres du compte
+                  </button>
+                )}
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-2 px-3.5 py-2 text-xs text-rose-600 hover:bg-rose-50"

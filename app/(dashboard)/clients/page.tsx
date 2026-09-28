@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { ClientsListView } from "@/components/clients/ClientsListView";
+import { getCurrentUser } from "@/lib/auth";
 
 export const revalidate = 0;
 
 export default async function ClientsPage() {
+  const user = await getCurrentUser();
   const clients = await prisma.client.findMany({
     orderBy: { createdAt: "desc" },
     include: {
@@ -14,5 +16,5 @@ export default async function ClientsPage() {
     },
   });
 
-  return <ClientsListView initialClients={clients} />;
+  return <ClientsListView initialClients={clients} userRole={user?.role} />;
 }

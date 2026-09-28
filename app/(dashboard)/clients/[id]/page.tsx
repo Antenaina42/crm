@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ClientDetailView } from "@/components/clients/ClientDetailView";
+import { getCurrentUser } from "@/lib/auth";
 
 export const revalidate = 0;
 
@@ -9,6 +10,7 @@ export default async function ClientDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const user = await getCurrentUser();
   const { id } = await params;
   const client = await prisma.client.findUnique({
     where: { id },
@@ -30,5 +32,5 @@ export default async function ClientDetailPage({
     notFound();
   }
 
-  return <ClientDetailView client={client} />;
+  return <ClientDetailView client={client} userRole={user?.role} />;
 }

@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { DashboardView } from "@/components/dashboard/DashboardView";
+import { getCurrentUser } from "@/lib/auth";
 import { InvoiceStatus, ContractStatus, ProjectStatus, AssetStatus, ProspectStatus } from "@prisma/client";
 
 export const revalidate = 0; // Données temps réel
 
 export default async function DashboardPage() {
+  const currentUser = await getCurrentUser();
   const now = new Date();
   const thirtyDaysLater = new Date();
   thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
@@ -28,6 +30,8 @@ export default async function DashboardPage() {
     overdueInvoices,
     prospectsToFollowUp,
     recentSignedContracts,
+    recentOffers,
+    recentProformas,
   ] = await Promise.all([
     prisma.prospect.count(),
     prisma.prospect.count({ where: { status: ProspectStatus.INTERESSE } }),
@@ -86,6 +90,16 @@ export default async function DashboardPage() {
       where: { status: ContractStatus.SIGNE },
       include: { client: true },
       take: 1,
+    }),
+    prisma.offer.findMany({
+      take: 4,
+      orderBy: { createdAt: "desc" },
+      include: { client: true, prospect: true },
+    }),
+    prisma.proforma.findMany({
+      take: 4,
+      orderBy: { createdAt: "desc" },
+      include: { client: true, prospect: true },
     }),
   ]);
 
@@ -242,6 +256,14 @@ export default async function DashboardPage() {
     todayTasks,
     recentInvoices,
     recentProspects,
+    recentOffers,
+    recentProformas,
+    currentUser: currentUser ? {
+      id: currentUser.id,
+      name: currentUser.name,
+      email: currentUser.email,
+      role: currentUser.role,
+    } : null,
   };
 
   return <DashboardView data={dashboardData} />;

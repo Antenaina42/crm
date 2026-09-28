@@ -136,15 +136,54 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Démo credentials hint */}
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-500 space-y-0.5">
-            <p className="font-semibold text-slate-700">Accès Démonstration :</p>
-            <p>
-              Email : <span className="font-mono text-brand-800 font-bold">admin@m-itlevelup.com</span>
-            </p>
-            <p>
-              Mot de passe : <span className="font-mono text-brand-800 font-bold">admin123</span>
-            </p>
+          {/* Démo credentials hints & quick switch */}
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <p className="text-[11px] font-bold text-slate-700">Comptes de test rapide (1-clic) :</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail("admin@m-itlevelup.com");
+                  setPassword("admin123");
+                }}
+                className={`p-2.5 rounded-xl border text-left transition-all ${
+                  email === "admin@m-itlevelup.com"
+                    ? "bg-brand-50 border-brand-300 ring-1 ring-brand-300"
+                    : "bg-slate-50 border-slate-200/80 hover:bg-slate-100"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-900">Admin</span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-brand-100 text-brand-800">
+                    Complet
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">admin@m-itlevelup.com</p>
+                <p className="text-[10px] text-slate-400 font-mono">admin123</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail("sarah.commercial@m-itlevelup.com");
+                  setPassword("admin123");
+                }}
+                className={`p-2.5 rounded-xl border text-left transition-all ${
+                  email === "sarah.commercial@m-itlevelup.com"
+                    ? "bg-amber-50 border-amber-300 ring-1 ring-amber-300"
+                    : "bg-slate-50 border-slate-200/80 hover:bg-slate-100"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-900">Commercial</span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-amber-100 text-amber-800">
+                    Restreint
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">sarah.commercial@...</p>
+                <p className="text-[10px] text-slate-400 font-mono">admin123</p>
+              </button>
+            </div>
           </div>
         </div>
 

@@ -79,10 +79,19 @@ interface DashboardData {
   }[];
   recentInvoices: any[];
   recentProspects: any[];
+  recentOffers?: any[];
+  recentProformas?: any[];
+  currentUser?: {
+    id?: string;
+    name?: string;
+    email?: string;
+    role?: string;
+  } | null;
 }
 
 export function DashboardView({ data }: { data: DashboardData }) {
   const [welcomeMessage, setWelcomeMessage] = useState(WELCOME_MESSAGES[0]);
+  const isCommercial = data.currentUser?.role === "COMMERCIAL";
 
   useEffect(() => {
     // Choisir aléatoirement un message à chaque session
@@ -90,7 +99,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
     setWelcomeMessage(WELCOME_MESSAGES[randomIdx]);
   }, []);
 
-  const kpis = [
+  const allKpis = [
     {
       label: "Prospects",
       value: data.counts.prospects,
@@ -98,6 +107,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       color: "text-blue-600",
       bg: "bg-blue-50",
       href: "/prospects",
+      roles: ["ALL"],
     },
     {
       label: "Clients Intéressés",
@@ -106,6 +116,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       color: "text-indigo-600",
       bg: "bg-indigo-50",
       href: "/prospects?status=INTERESSE",
+      roles: ["ALL"],
     },
     {
       label: "Offres Envoyées",
@@ -114,6 +125,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       color: "text-purple-600",
       bg: "bg-purple-50",
       href: "/offers",
+      roles: ["ALL"],
     },
     {
       label: "Proformas Envoyées",
@@ -122,6 +134,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       color: "text-amber-600",
       bg: "bg-amber-50",
       href: "/proformas",
+      roles: ["ALL"],
     },
     {
       label: "Contrats Signés",
@@ -130,6 +143,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       color: "text-emerald-600",
       bg: "bg-emerald-50",
       href: "/contracts",
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
     {
       label: "Factures Impayées",
@@ -139,6 +153,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       bg: "bg-rose-50",
       href: "/invoices?status=UNPAID",
       badge: data.counts.unpaidInvoices > 0 ? "À relancer" : undefined,
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
     {
       label: "Chiffre d'Affaires",
@@ -148,6 +163,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       bg: "bg-brand-50",
       href: "/budget",
       isCurrency: true,
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
     {
       label: "CA Encaissé",
@@ -157,6 +173,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       bg: "bg-emerald-50",
       href: "/payments",
       isCurrency: true,
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
     {
       label: "Reste à Encaisser",
@@ -166,6 +183,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       bg: "bg-amber-50",
       href: "/invoices",
       isCurrency: true,
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
     {
       label: "Projets en cours",
@@ -174,6 +192,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       color: "text-cyan-600",
       bg: "bg-cyan-50",
       href: "/projects",
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
     {
       label: "Projets terminés",
@@ -182,6 +201,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       color: "text-teal-600",
       bg: "bg-teal-50",
       href: "/projects?status=TERMINE",
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
     {
       label: "Domaines expirant",
@@ -190,6 +210,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       color: "text-orange-600",
       bg: "bg-orange-50",
       href: "/domains",
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
     {
       label: "Hébergements expirant",
@@ -198,8 +219,23 @@ export function DashboardView({ data }: { data: DashboardData }) {
       color: "text-sky-600",
       bg: "bg-sky-50",
       href: "/hostings",
+      roles: ["ADMIN", "SUPER_ADMIN"],
     },
   ];
+
+  const kpis = isCommercial
+    ? allKpis.filter((k) => k.roles.includes("ALL"))
+    : allKpis;
+
+  const visibleTasks = isCommercial
+    ? data.todayTasks.filter(
+        (t) =>
+          t.href.startsWith("/prospects") ||
+          t.href.startsWith("/offers") ||
+          t.href.startsWith("/proformas") ||
+          t.href.startsWith("/calendar")
+      )
+    : data.todayTasks;
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -209,13 +245,17 @@ export function DashboardView({ data }: { data: DashboardData }) {
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-cyan-300 mb-3 border border-white/10">
             <Sparkles className="w-3.5 h-3.5" />
-            CRM Commercial & Opérations Digitales
+            {isCommercial ? "Espace Commercial & Ventes" : "CRM Commercial & Opérations Digitales"}
           </div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white mb-2">
-            {welcomeMessage}
+            {isCommercial
+              ? `Bonjour ${data.currentUser?.name || "Sarah"} 👋 Prêt à concrétiser de nouvelles ventes ?`
+              : welcomeMessage}
           </h1>
           <p className="text-sm text-slate-300/90 font-medium leading-relaxed">
-            Suivi en temps réel de votre cycle commercial : prospects, contrats, factures officielles M-It LevelUp et hébergements clients.
+            {isCommercial
+              ? "Gestion active de vos prospects, propositions d'offres commerciales, devis proforma et relances directes WhatsApp."
+              : "Suivi en temps réel de votre cycle commercial : prospects, contrats, factures officielles M-It LevelUp et hébergements clients."}
           </p>
 
           <div className="flex flex-wrap items-center gap-3 mt-6">
@@ -227,12 +267,28 @@ export function DashboardView({ data }: { data: DashboardData }) {
               Nouveau Prospect
             </Link>
             <Link
-              href="/invoices?new=true"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-700/80 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm border border-brand-500/30 transition-all active:scale-95"
+              href="/offers?new=true"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-700/80 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm border border-indigo-500/30 transition-all active:scale-95"
             >
-              <CreditCard className="w-4 h-4" />
-              Créer Facture
+              <FileText className="w-4 h-4" />
+              Nouvelle Offre
             </Link>
+            <Link
+              href="/proformas?new=true"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-700/80 hover:bg-amber-700 text-white font-semibold text-xs sm:text-sm border border-amber-500/30 transition-all active:scale-95"
+            >
+              <Receipt className="w-4 h-4" />
+              Nouvelle Proforma
+            </Link>
+            {!isCommercial && (
+              <Link
+                href="/invoices?new=true"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-700/80 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm border border-brand-500/30 transition-all active:scale-95"
+              >
+                <CreditCard className="w-4 h-4" />
+                Créer Facture
+              </Link>
+            )}
             <Link
               href="/calendar"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs sm:text-sm transition-all"
@@ -258,8 +314,13 @@ export function DashboardView({ data }: { data: DashboardData }) {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {data.todayTasks.map((task, idx) => {
+        {visibleTasks.length === 0 ? (
+          <div className="py-6 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-100">
+            Toutes les relances et opportunités prioritaires sont à jour pour le moment.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {visibleTasks.map((task, idx) => {
             const colors = {
               DANGER: "bg-rose-50 border-rose-100 text-rose-800 hover:border-rose-200",
               WARNING: "bg-amber-50 border-amber-100 text-amber-800 hover:border-amber-200",
@@ -293,7 +354,8 @@ export function DashboardView({ data }: { data: DashboardData }) {
             );
           })}
         </div>
-      </div>
+      )}
+    </div>
 
       {/* 3. 13 KPIs Grille */}
       <div>
@@ -342,8 +404,111 @@ export function DashboardView({ data }: { data: DashboardData }) {
       </div>
 
       {/* 4. Graphiques Dashboard */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Graphique 1 : Chiffre d'Affaires Mensuel & Encaissements */}
+      {isCommercial ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Graphique Pipeline Commercial */}
+          <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">
+                  Pipeline Commercial
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Tunnel de conversion : Prospects → Offres & Proformas
+                </p>
+              </div>
+              <Link
+                href="/prospects"
+                className="text-xs font-semibold text-brand-800 hover:text-brand-900 inline-flex items-center gap-1"
+              >
+                Pipeline Kanban <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.pipelineData.slice(0, 5)} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                  <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                  <YAxis
+                    dataKey="stage"
+                    type="category"
+                    stroke="#64748b"
+                    fontSize={11}
+                    tickLine={false}
+                    width={110}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "#f8fafc" }}
+                    contentStyle={{
+                      backgroundColor: "#ffffff",
+                      borderRadius: "12px",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  />
+                  <Bar dataKey="count" name="Opportunités" fill="#0b1d3a" radius={[0, 8, 8, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Guide Commercial & Actions rapides */}
+          <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-slate-900 text-base">
+                  Cycle de Vente M-It LevelUp
+                </h3>
+                <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-emerald-50 text-emerald-700">
+                  Espace Commercial
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                Suivez les étapes clés de négociation avec chaque client pour maximiser le taux de signature.
+              </p>
+
+              <div className="space-y-3">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">1. Qualification du Prospect</p>
+                    <p className="text-[11px] text-slate-500">Ajout des coordonnées WhatsApp & qualification du besoin</p>
+                  </div>
+                  <Link href="/prospects?new=true" className="text-xs font-semibold text-brand-800 hover:underline">
+                    Nouveau
+                  </Link>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">2. Envoi Proposition & Offre</p>
+                    <p className="text-[11px] text-slate-500">Sélection dans le catalogue des packs & services</p>
+                  </div>
+                  <Link href="/offers?new=true" className="text-xs font-semibold text-brand-800 hover:underline">
+                    Créer offre
+                  </Link>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">3. Devis Facture Proforma</p>
+                    <p className="text-[11px] text-slate-500">Génération du PDF et transmission directe WhatsApp</p>
+                  </div>
+                  <Link href="/proformas?new=true" className="text-xs font-semibold text-brand-800 hover:underline">
+                    Émettre
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+              <span>Support Commercial Interne</span>
+              <span className="font-semibold text-slate-700">admin@m-itlevelup.com</span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Graphique 1 : Chiffre d'Affaires Mensuel & Encaissements */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -546,66 +711,122 @@ export function DashboardView({ data }: { data: DashboardData }) {
           </div>
         </div>
       </div>
+      )}
 
-      {/* 5. Dernières Factures & Derniers Prospects */}
+      {/* 5. Dernières Factures / Proformas & Derniers Prospects */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Factures Récentes */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 text-base">
-              Factures Récentes
-            </h3>
-            <Link
-              href="/invoices"
-              className="text-xs font-semibold text-brand-800 hover:text-brand-900"
-            >
-              Voir toutes
-            </Link>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {data.recentInvoices.map((inv) => (
-              <div
-                key={inv.id}
-                className="p-4 flex items-center justify-between hover:bg-slate-50/70 transition-colors"
+        {/* Colonne Gauche : Proformas (pour Commercial) ou Factures (pour Admin) */}
+        {isCommercial ? (
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-bold text-slate-900 text-base">
+                Factures Proforma Récentes
+              </h3>
+              <Link
+                href="/proformas"
+                className="text-xs font-semibold text-brand-800 hover:text-brand-900"
               >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-slate-900">
-                      {inv.invoiceNumber}
-                    </span>
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                        inv.status === "PAYEE"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : inv.status === "PARTIELLEMENT_PAYEE"
-                          ? "bg-blue-100 text-blue-700"
-                          : inv.status === "EN_RETARD"
-                          ? "bg-rose-100 text-rose-700"
-                          : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {inv.status.replace("_", " ")}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 font-medium">
-                    {inv.client?.company || inv.client?.name}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-slate-900">
-                    {formatCurrency(inv.total, inv.currency || "Ar")}
-                  </p>
-                  <Link
-                    href={`/invoices/${inv.id}`}
-                    className="text-xs text-brand-800 hover:underline font-semibold"
+                Voir toutes
+              </Link>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {data.recentProformas && data.recentProformas.length > 0 ? (
+                data.recentProformas.map((pro: any) => (
+                  <div
+                    key={pro.id}
+                    className="p-4 flex items-center justify-between hover:bg-slate-50/70 transition-colors"
                   >
-                    Consulter
-                  </Link>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-slate-900">
+                          {pro.proformaNumber}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          {pro.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 font-medium">
+                        {pro.client?.company || pro.prospect?.company || pro.client?.name || (pro.prospect?.firstName ? `${pro.prospect.firstName} ${pro.prospect.lastName}` : "Client")}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-slate-900">
+                        {formatCurrency(pro.total, pro.currency || "Ar")}
+                      </p>
+                      <Link
+                        href={`/proformas/${pro.id}`}
+                        className="text-xs text-brand-800 hover:underline font-semibold"
+                      >
+                        Consulter / WhatsApp
+                      </Link>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-6 text-center text-xs text-slate-400">
+                  Aucune proforma émise récemment.
                 </div>
-              </div>
-            ))}
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-bold text-slate-900 text-base">
+                Factures Récentes
+              </h3>
+              <Link
+                href="/invoices"
+                className="text-xs font-semibold text-brand-800 hover:text-brand-900"
+              >
+                Voir toutes
+              </Link>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {data.recentInvoices.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="p-4 flex items-center justify-between hover:bg-slate-50/70 transition-colors"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-slate-900">
+                        {inv.invoiceNumber}
+                      </span>
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                          inv.status === "PAYEE"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : inv.status === "PARTIELLEMENT_PAYEE"
+                            ? "bg-blue-100 text-blue-700"
+                            : inv.status === "EN_RETARD"
+                            ? "bg-rose-100 text-rose-700"
+                            : "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        {inv.status.replace("_", " ")}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium">
+                      {inv.client?.company || inv.client?.name}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-slate-900">
+                      {formatCurrency(inv.total, inv.currency || "Ar")}
+                    </p>
+                    <Link
+                      href={`/invoices/${inv.id}`}
+                      className="text-xs text-brand-800 hover:underline font-semibold"
+                    >
+                      Consulter
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Prospects Récents */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">

@@ -27,34 +27,50 @@ import {
 interface SidebarProps {
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
+  currentUser?: {
+    name: string;
+    email: string;
+    role: string;
+  } | null;
 }
 
-const navItems = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
-  { label: "Prospects", href: "/prospects", icon: Users },
-  { label: "Clients", href: "/clients", icon: Briefcase },
-  { label: "Offres", href: "/offers", icon: FileText },
-  { label: "Proformas", href: "/proformas", icon: Receipt },
-  { label: "Factures", href: "/invoices", icon: CreditCard },
-  { label: "Paiements", href: "/payments", icon: CreditCard },
-  { label: "Contrats", href: "/contracts", icon: FileCheck },
-  { label: "Projets", href: "/projects", icon: Rocket },
-  { label: "Tâches", href: "/tasks", icon: CheckSquare },
-  { label: "Domaines", href: "/domains", icon: Globe },
-  { label: "Hébergements", href: "/hostings", icon: Cloud },
-  { label: "Budget", href: "/budget", icon: Wallet },
-  { label: "Calendrier", href: "/calendar", icon: Calendar },
-  { label: "Notifications", href: "/notifications", icon: Bell },
-  { label: "Documents", href: "/documents", icon: FolderArchive },
-  { label: "Rapports", href: "/reports", icon: BarChart3 },
-  { label: "Paramètres", href: "/settings", icon: Settings },
+const allNavItems = [
+  { label: "Dashboard", href: "/", icon: LayoutDashboard, roles: ["ALL"] },
+  { label: "Prospects", href: "/prospects", icon: Users, roles: ["ALL"] },
+  { label: "Clients", href: "/clients", icon: Briefcase, roles: ["ALL"] },
+  { label: "Offres", href: "/offers", icon: FileText, roles: ["ALL"] },
+  { label: "Proformas", href: "/proformas", icon: Receipt, roles: ["ALL"] },
+  { label: "Factures", href: "/invoices", icon: CreditCard, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { label: "Paiements", href: "/payments", icon: CreditCard, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { label: "Contrats", href: "/contracts", icon: FileCheck, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { label: "Projets", href: "/projects", icon: Rocket, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { label: "Tâches", href: "/tasks", icon: CheckSquare, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { label: "Domaines", href: "/domains", icon: Globe, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { label: "Hébergements", href: "/hostings", icon: Cloud, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { label: "Budget", href: "/budget", icon: Wallet, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { label: "Calendrier", href: "/calendar", icon: Calendar, roles: ["ALL"] },
+  { label: "Notifications", href: "/notifications", icon: Bell, roles: ["ALL"] },
+  { label: "Documents", href: "/documents", icon: FolderArchive, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { label: "Rapports", href: "/reports", icon: BarChart3, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { label: "Utilisateurs", href: "/users", icon: Users, roles: ["ADMIN", "SUPER_ADMIN"] },
+  { label: "Paramètres", href: "/settings", icon: Settings, roles: ["ADMIN", "SUPER_ADMIN"] },
 ];
 
 export function Sidebar({
   mobileOpen = false,
   onCloseMobile,
+  currentUser,
 }: SidebarProps) {
   const pathname = usePathname();
+
+  const isCommercial = currentUser?.role === "COMMERCIAL";
+
+  const navItems = allNavItems.filter((item) => {
+    if (isCommercial) {
+      return item.roles.includes("ALL");
+    }
+    return true;
+  });
 
   const content = (
     <div className="flex flex-col h-full bg-white border-r border-slate-200/80 w-64 select-none">
@@ -77,7 +93,7 @@ export function Sidebar({
               </span>
             </div>
             <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-              Digital Agency CRM
+              {isCommercial ? "Espace Commercial" : "Digital Agency CRM"}
             </p>
           </div>
         </Link>
@@ -124,12 +140,21 @@ export function Sidebar({
 
       {/* Footer Info */}
       <div className="p-3 border-t border-slate-100 bg-slate-50/50">
-        <div className="flex items-center gap-2.5 px-2 py-1.5">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <div className="text-xs text-slate-500 truncate">
-            <span className="font-semibold text-slate-700">M-It Cloud CRM</span> v1.0
+        {isCommercial ? (
+          <div className="flex items-center gap-2 px-2.5 py-1.5 bg-cyan-50/80 rounded-xl border border-cyan-200/60 text-cyan-900">
+            <Briefcase className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
+            <div className="text-[11px] truncate">
+              <span className="font-bold">Espace Commercial</span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-2.5 px-2 py-1.5">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="text-xs text-slate-500 truncate">
+              <span className="font-semibold text-slate-700">M-It Cloud CRM</span> v1.0
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

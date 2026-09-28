@@ -12,28 +12,48 @@ export default function DashboardLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [unpaidCount, setUnpaidCount] = useState(0);
+  const [currentUser, setCurrentUser] = useState<{
+    id?: string;
+    name: string;
+    email: string;
+    role: string;
+  } | null>(null);
 
   useEffect(() => {
-    async function loadStats() {
+    async function loadUserAndStats() {
       try {
+        const userRes = await fetch("/api/auth/me");
+        let userRole = "";
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (userData.user) {
+            setCurrentUser(userData.user);
+            userRole = userData.user.role;
+          }
+        }
+
         const notifRes = await fetch("/api/notifications");
         if (notifRes.ok) {
           const data = await notifRes.json();
           setUnreadNotifications(data.unreadCount ?? 0);
         }
-        const invRes = await fetch("/api/invoices");
-        if (invRes.ok) {
-          const invoices = await invRes.json();
-          const unpaid = invoices.filter(
-            (i: any) => i.status !== "PAYEE" && i.status !== "ANNULEE"
-          ).length;
-          setUnpaidCount(unpaid);
+
+        // Only load invoices count if user is not commercial
+        if (userRole !== "COMMERCIAL") {
+          const invRes = await fetch("/api/invoices");
+          if (invRes.ok) {
+            const invoices = await invRes.json();
+            const unpaid = invoices.filter(
+              (i: any) => i.status !== "PAYEE" && i.status !== "ANNULEE"
+            ).length;
+            setUnpaidCount(unpaid);
+          }
         }
       } catch (err) {
         console.error(err);
       }
     }
-    loadStats();
+    loadUserAndStats();
   }, []);
 
   return (
@@ -43,6 +63,7 @@ export default function DashboardLayout({
         <Sidebar
           mobileOpen={mobileMenuOpen}
           onCloseMobile={() => setMobileMenuOpen(false)}
+          currentUser={currentUser}
         />
       </div>
 
@@ -51,11 +72,7 @@ export default function DashboardLayout({
         <div className="no-print">
           <Header
             onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
-            currentUser={{
-              name: "Miora Antenaina RAZAKATIANA",
-              email: "admin@m-itlevelup.com",
-              role: "Super Admin",
-            }}
+            currentUser={currentUser}
             unreadCount={unreadNotifications}
           />
         </div>

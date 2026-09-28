@@ -35,9 +35,10 @@ import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 interface ClientDetailViewProps {
   client: any;
+  userRole?: string;
 }
 
-export function ClientDetailView({ client }: ClientDetailViewProps) {
+export function ClientDetailView({ client, userRole }: ClientDetailViewProps) {
   const router = useRouter();
   const [clientData, setClientData] = useState<any>(client);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -116,18 +117,24 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
     `Bonjour ${clientData.name}, l'équipe M-It LevelUp reste à votre disposition.`
   );
 
-  const tabs = [
-    { id: "overview", label: "Vue d'ensemble", count: null },
-    { id: "projects", label: "Projets", count: client.projects?.length },
-    { id: "offers", label: "Offres", count: client.offers?.length },
-    { id: "proformas", label: "Proformas", count: client.proformas?.length },
-    { id: "invoices", label: "Factures", count: client.invoices?.length },
-    { id: "payments", label: "Paiements", count: client.payments?.length },
-    { id: "contracts", label: "Contrats", count: client.contracts?.length },
-    { id: "domains", label: "Domaines & Hébergement", count: (client.domains?.length || 0) + (client.hostings?.length || 0) },
-    { id: "documents", label: "Documents", count: client.documents?.length },
-    { id: "timeline", label: "Historique", count: client.activityLogs?.length },
+  const isCommercial = userRole === "COMMERCIAL";
+
+  const allTabs = [
+    { id: "overview", label: "Vue d'ensemble", count: null, roles: ["ALL"] },
+    { id: "projects", label: "Projets", count: client.projects?.length, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { id: "offers", label: "Offres", count: client.offers?.length, roles: ["ALL"] },
+    { id: "proformas", label: "Proformas", count: client.proformas?.length, roles: ["ALL"] },
+    { id: "invoices", label: "Factures", count: client.invoices?.length, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { id: "payments", label: "Paiements", count: client.payments?.length, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { id: "contracts", label: "Contrats", count: client.contracts?.length, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { id: "domains", label: "Domaines & Hébergement", count: (client.domains?.length || 0) + (client.hostings?.length || 0), roles: ["ADMIN", "SUPER_ADMIN"] },
+    { id: "documents", label: "Documents", count: client.documents?.length, roles: ["ADMIN", "SUPER_ADMIN"] },
+    { id: "timeline", label: "Historique", count: client.activityLogs?.length, roles: ["ALL"] },
   ];
+
+  const tabs = isCommercial
+    ? allTabs.filter((t) => t.roles.includes("ALL"))
+    : allTabs;
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
@@ -261,38 +268,42 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
               <Edit2 className="w-3.5 h-3.5" />
               Modifier la Fiche
             </button>
-            <button
-              type="button"
-              onClick={handleDeleteClient}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white border border-rose-100 hover:bg-rose-50 text-rose-600 text-xs font-semibold transition-all"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Supprimer Client
-            </button>
+            {!isCommercial && (
+              <button
+                type="button"
+                onClick={handleDeleteClient}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white border border-rose-100 hover:bg-rose-50 text-rose-600 text-xs font-semibold transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Supprimer Client
+              </button>
+            )}
           </div>
         </div>
 
         {/* Mini Financial Summary Banner */}
-        <div className="grid grid-cols-3 gap-3 mt-6 pt-6 border-t border-slate-100 text-center">
-          <div className="p-3 bg-slate-50 rounded-2xl">
-            <span className="text-[11px] text-slate-400 font-semibold uppercase">Total Facturé</span>
-            <p className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">
-              {formatAriary(totalBilled)}
-            </p>
+        {!isCommercial && (
+          <div className="grid grid-cols-3 gap-3 mt-6 pt-6 border-t border-slate-100 text-center">
+            <div className="p-3 bg-slate-50 rounded-2xl">
+              <span className="text-[11px] text-slate-400 font-semibold uppercase">Total Facturé</span>
+              <p className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">
+                {formatAriary(totalBilled)}
+              </p>
+            </div>
+            <div className="p-3 bg-emerald-50 rounded-2xl">
+              <span className="text-[11px] text-emerald-700 font-semibold uppercase">Total Encaissé</span>
+              <p className="text-base sm:text-lg font-bold text-emerald-800 mt-0.5">
+                {formatAriary(totalPaid)}
+              </p>
+            </div>
+            <div className="p-3 bg-amber-50 rounded-2xl">
+              <span className="text-[11px] text-amber-700 font-semibold uppercase">Reste Dû</span>
+              <p className="text-base sm:text-lg font-bold text-amber-800 mt-0.5">
+                {formatAriary(balanceDue)}
+              </p>
+            </div>
           </div>
-          <div className="p-3 bg-emerald-50 rounded-2xl">
-            <span className="text-[11px] text-emerald-700 font-semibold uppercase">Total Encaissé</span>
-            <p className="text-base sm:text-lg font-bold text-emerald-800 mt-0.5">
-              {formatAriary(totalPaid)}
-            </p>
-          </div>
-          <div className="p-3 bg-amber-50 rounded-2xl">
-            <span className="text-[11px] text-amber-700 font-semibold uppercase">Reste Dû</span>
-            <p className="text-base sm:text-lg font-bold text-amber-800 mt-0.5">
-              {formatAriary(balanceDue)}
-            </p>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Tabs Navigation */}
@@ -326,75 +337,151 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
       {/* Tab 1 : VUE D'ENSEMBLE */}
       {activeTab === "overview" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
-          {/* Projets récents */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-sm text-slate-900">Projets du Client</h3>
-              <button
-                onClick={() => setActiveTab("projects")}
-                className="text-xs text-brand-800 hover:underline font-semibold"
-              >
-                Tous ({client.projects?.length || 0})
-              </button>
-            </div>
-            <div className="space-y-3">
-              {client.projects?.length > 0 ? (
-                client.projects.map((pr: any) => (
-                  <div
-                    key={pr.id}
-                    className="p-3.5 rounded-xl border border-slate-100 hover:border-brand-200 transition-colors bg-slate-50/50 flex items-center justify-between"
+          {isCommercial ? (
+            <>
+              {/* Offres Commerciales */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-sm text-slate-900">Offres Commerciales</h3>
+                  <button
+                    onClick={() => setActiveTab("offers")}
+                    className="text-xs text-brand-800 hover:underline font-semibold"
                   >
-                    <div>
-                      <p className="text-xs font-bold text-slate-900">{pr.title}</p>
-                      <p className="text-[11px] text-slate-400">
-                        N° {pr.projectNumber} • Début le {formatDate(pr.startDate)}
-                      </p>
-                    </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-50 text-indigo-700">
-                      {pr.status}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-slate-400 p-4 text-center">Aucun projet en cours.</p>
-              )}
-            </div>
-          </div>
+                    Toutes ({client.offers?.length || 0})
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {client.offers?.length > 0 ? (
+                    client.offers.map((off: any) => (
+                      <div
+                        key={off.id}
+                        className="p-3.5 rounded-xl border border-slate-100 hover:border-brand-200 transition-colors bg-slate-50/50 flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-slate-900">{off.offerNumber} — {off.title}</p>
+                          <p className="text-[11px] text-slate-400">
+                            Total : {formatCurrency(off.total, off.currency || "Ar")}
+                          </p>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-50 text-indigo-700">
+                          {off.status}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400 p-4 text-center">Aucune offre commerciale émise.</p>
+                  )}
+                </div>
+              </div>
 
-          {/* Factures récentes */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-sm text-slate-900">Factures du Client</h3>
-              <button
-                onClick={() => setActiveTab("invoices")}
-                className="text-xs text-brand-800 hover:underline font-semibold"
-              >
-                Toutes ({client.invoices?.length || 0})
-              </button>
-            </div>
-            <div className="space-y-3">
-              {client.invoices?.length > 0 ? (
-                client.invoices.map((inv: any) => (
-                  <div
-                    key={inv.id}
-                    className="p-3.5 rounded-xl border border-slate-100 hover:border-brand-200 transition-colors bg-slate-50/50 flex items-center justify-between"
+              {/* Factures Proforma */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-sm text-slate-900">Factures Proforma</h3>
+                  <button
+                    onClick={() => setActiveTab("proformas")}
+                    className="text-xs text-brand-800 hover:underline font-semibold"
                   >
-                    <div>
-                      <p className="text-xs font-bold text-slate-900">{inv.invoiceNumber}</p>
-                      <p className="text-[11px] text-slate-400">
-                        Date: {formatDate(inv.date)} • Total: {formatCurrency(inv.total, inv.currency || "Ar")}
-                      </p>
-                    </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700">
-                      {inv.status}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-slate-400 p-4 text-center">Aucune facture enregistrée.</p>
-              )}
-            </div>
-          </div>
+                    Toutes ({client.proformas?.length || 0})
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {client.proformas?.length > 0 ? (
+                    client.proformas.map((pro: any) => (
+                      <div
+                        key={pro.id}
+                        className="p-3.5 rounded-xl border border-slate-100 hover:border-brand-200 transition-colors bg-slate-50/50 flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-slate-900">{pro.proformaNumber}</p>
+                          <p className="text-[11px] text-slate-400">
+                            Date: {formatDate(pro.date)} • Total: {formatCurrency(pro.total, pro.currency || "Ar")}
+                          </p>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-50 text-amber-700">
+                          {pro.status}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400 p-4 text-center">Aucune facture proforma enregistrée.</p>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Projets récents */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-sm text-slate-900">Projets du Client</h3>
+                  <button
+                    onClick={() => setActiveTab("projects")}
+                    className="text-xs text-brand-800 hover:underline font-semibold"
+                  >
+                    Tous ({client.projects?.length || 0})
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {client.projects?.length > 0 ? (
+                    client.projects.map((pr: any) => (
+                      <div
+                        key={pr.id}
+                        className="p-3.5 rounded-xl border border-slate-100 hover:border-brand-200 transition-colors bg-slate-50/50 flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-slate-900">{pr.title}</p>
+                          <p className="text-[11px] text-slate-400">
+                            N° {pr.projectNumber} • Début le {formatDate(pr.startDate)}
+                          </p>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-50 text-indigo-700">
+                          {pr.status}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400 p-4 text-center">Aucun projet en cours.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Factures récentes */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-sm text-slate-900">Factures du Client</h3>
+                  <button
+                    onClick={() => setActiveTab("invoices")}
+                    className="text-xs text-brand-800 hover:underline font-semibold"
+                  >
+                    Toutes ({client.invoices?.length || 0})
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {client.invoices?.length > 0 ? (
+                    client.invoices.map((inv: any) => (
+                      <div
+                        key={inv.id}
+                        className="p-3.5 rounded-xl border border-slate-100 hover:border-brand-200 transition-colors bg-slate-50/50 flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-slate-900">{inv.invoiceNumber}</p>
+                          <p className="text-[11px] text-slate-400">
+                            Date: {formatDate(inv.date)} • Total: {formatCurrency(inv.total, inv.currency || "Ar")}
+                          </p>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700">
+                          {inv.status}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400 p-4 text-center">Aucune facture enregistrée.</p>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
