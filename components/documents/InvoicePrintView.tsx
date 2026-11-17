@@ -11,8 +11,13 @@ import {
   ArrowLeft,
   Share2,
   Download,
+  Copy,
+  Check,
+  ExternalLink,
+  Clock,
+  ShieldCheck,
 } from "lucide-react";
-import { formatAriary, formatCurrency, getCurrencySymbol, numberToFrenchWords, formatDate } from "@/lib/formatters";
+import { formatAriary, formatCurrency, getCurrencySymbol, numberToFrenchWords, formatDate, formatDateTime } from "@/lib/formatters";
 import { buildWhatsAppUrl, generateInvoiceMessage } from "@/lib/whatsapp";
 import { CompanyStampSignature } from "./CompanyStampSignature";
 
@@ -28,8 +33,19 @@ export function InvoicePrintView({ invoice, companySettings }: InvoicePrintViewP
   const [paymentRef, setPaymentRef] = useState("");
   const [isPaid, setIsPaid] = useState(invoice.status === "PAYEE");
 
+  const [copiedSignLink, setCopiedSignLink] = useState(false);
+
   const currency = invoice.currency || companySettings?.currency || "Ar";
   const currencySym = getCurrencySymbol(currency);
+
+  const signToken = invoice.signToken;
+  const copySignLink = () => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://crm.m-itlevelup.com";
+    const url = `${origin}/sign/${signToken}`;
+    navigator.clipboard.writeText(url);
+    setCopiedSignLink(true);
+    setTimeout(() => setCopiedSignLink(false), 2500);
+  };
 
   const handlePrint = () => {
     window.print();
@@ -61,12 +77,9 @@ export function InvoicePrintView({ invoice, companySettings }: InvoicePrintViewP
   };
 
   const clientPhone = invoice.client?.whatsapp || invoice.client?.phone?.replace(/[^0-9]/g, "");
-  const waMsg = generateInvoiceMessage({
-    clientName: invoice.client?.name || "Client",
-    invoiceNumber: invoice.invoiceNumber,
-    totalAmount: formatCurrency(invoice.total, currency),
-    dueAmount: formatCurrency(invoice.remainingAmount || invoice.total, currency),
-  });
+  const originUrl = typeof window !== "undefined" ? window.location.origin : "https://crm.m-itlevelup.com";
+  const signUrl = `${originUrl}/sign/${signToken}`;
+  const waMsg = `Bonjour ${invoice.client?.name || "Client"},\n\nVeuillez trouver votre facture officielle *${invoice.invoiceNumber}* émise par M-It LevelUp pour un montant de *${formatCurrency(invoice.total, currency)}* (Montant attendu : *${formatCurrency(invoice.remainingAmount || invoice.total, currency)}*).\n\n✍️ *Signer votre facture directement en ligne (sécurisé)* :\n${signUrl}\n\nRèglements acceptés : MVola (+261 34 54 038 98) ou virement bancaire.\n\nMerci pour votre confiance !\n*M-It LevelUp*`;
   const waUrl = buildWhatsAppUrl(clientPhone || "261345403898", waMsg);
 
   return (
@@ -81,42 +94,103 @@ export function InvoicePrintView({ invoice, companySettings }: InvoicePrintViewP
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <h2 className="text-base font-bold text-slate-900">
-              {invoice.invoiceNumber}
-            </h2>
-            <p className="text-xs text-slate-500">
-              {invoice.client?.company || invoice.client?.name} • Statut :{" "}
-              <span className="font-bold text-slate-700">{invoice.status}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base font-bold text-slate-900">
+                {invoice.invoiceNumber}
+              </h2>
+              {/* Statut Paiement */}
+              <span
+                className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  invoice.status === "PAYEE"
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    : invoice.status === "PARTIELLEMENT_PAYEE"
+                    ? "bg-blue-50 text-blue-700 border border-blue-200"
+                    : invoice.status === "EN_RETARD"
+                    ? "bg-rose-50 text-rose-700 border border-rose-200"
+                    : "bg-slate-100 text-slate-700 border border-slate-200"
+                }`}
+              >
+                {invoice.status}
+              </span>
+              {/* Statut Signature Client */}
+              {invoice.signatureClient ? (
+                <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  Signé par {invoice.signerName || "Client"} {invoice.signedAt ? `(${formatDate(invoice.signedAt)})` : ""}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                  <Clock className="w-3 h-3 text-amber-600" />
+                  Non signé par le client
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {invoice.client?.company || invoice.client?.name}
+              {invoice.date && ` • Émis le ${formatDate(invoice.date)}`}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
           >
             <Printer className="w-4 h-4" />
-            Imprimer / PDF A4
+            <span>Imprimer / PDF</span>
           </button>
 
+          {/* Bouton Copier Lien Signature */}
+          <button
+            onClick={copySignLink}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
+            title="Copier le lien direct de signature client"
+          >
+            {copiedSignLink ? (
+              <>
+                <Check className="w-4 h-4 text-emerald-600" />
+                <span className="text-emerald-700 font-bold">Lien Copié !</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4 text-slate-600" />
+                <span>Lien Signature</span>
+              </>
+            )}
+          </button>
+
+          {/* Aperçu Vue Client */}
+          <a
+            href={`/sign/${signToken}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold shadow-xs transition-all active:scale-95"
+            title="Ouvrir la page de signature que voit le client"
+          >
+            <ExternalLink className="w-4 h-4 text-brand-800" />
+            <span>Vue Client</span>
+          </a>
+
+          {/* Envoi WhatsApp avec lien de signature inclus */}
           <a
             href={waUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all active:scale-95"
+            title="Envoyer la facture et le lien de signature par WhatsApp"
           >
             <Send className="w-4 h-4" />
-            Envoyer WhatsApp
+            <span>WhatsApp (avec lien)</span>
           </a>
 
           {invoice.status !== "PAYEE" && !isPaid && (
             <button
               onClick={() => setIsRecordingPayment(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-800 hover:bg-brand-900 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all active:scale-95"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-800 hover:bg-brand-900 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
             >
               <CreditCard className="w-4 h-4" />
-              Encaisser Paiement
+              <span>Encaisser</span>
             </button>
           )}
         </div>
@@ -344,14 +418,49 @@ export function InvoicePrintView({ invoice, companySettings }: InvoicePrintViewP
         {/* Signatures officielles */}
         <div className="mt-8 print:mt-2.5 pt-4 print:pt-1 flex flex-col sm:flex-row justify-between items-end gap-6 print:gap-4 text-xs">
           {/* Signature Client */}
-          <div className="w-56 print:w-48 text-left">
-            <p className="font-extrabold text-slate-950 mb-6 print:mb-2 text-sm print:text-xs">
+          <div className="w-64 print:w-48 text-left">
+            <p className="font-extrabold text-slate-950 mb-2 print:mb-1 text-sm print:text-xs">
               {invoice.client?.company || invoice.client?.name}
             </p>
-            <div className="h-14 print:h-11 border-b-2 border-dashed border-slate-300 flex items-center justify-center text-[11px] print:text-[10px] text-slate-400 italic">
-              {invoice.signatureClient ? "Signé électroniquement" : "Signature Client & Bon pour accord"}
-            </div>
-            <p className="text-[10px] print:text-[9px] text-slate-400 mt-1">Précédé de la mention « Lu et approuvé »</p>
+            {invoice.signatureClient && invoice.signatureDataUrl ? (
+              <div className="p-2 border border-emerald-300 rounded-xl bg-emerald-50/40">
+                <img
+                  src={invoice.signatureDataUrl}
+                  alt="Signature Client"
+                  className="h-12 max-w-full object-contain mx-auto"
+                />
+                <div className="text-[10px] print:text-[8px] text-emerald-800 font-bold mt-1">
+                  ✓ Signé électroniquement par {invoice.signerName || "Client"}
+                </div>
+                <div className="text-[9px] print:text-[7px] text-slate-500 font-mono">
+                  Le {formatDateTime(invoice.signedAt)} • IP : {invoice.signerIp || "127.0.0.1"}
+                </div>
+                <div className="text-[8px] print:text-[6px] text-slate-400 font-mono truncate">
+                  Hash : {invoice.signatureHash?.substring(0, 20)}...
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="h-14 print:h-11 border-b-2 border-dashed border-slate-300 flex items-center justify-center text-[11px] print:text-[10px] text-slate-400 italic">
+                  {invoice.signatureClient ? "Signé électroniquement" : "Signature Client & Bon pour accord"}
+                </div>
+                <p className="text-[10px] print:text-[9px] text-slate-400 mt-1">
+                  Précédé de la mention « Lu et approuvé »
+                </p>
+                {!invoice.signatureClient && (
+                  <div className="no-print mt-1.5">
+                    <button
+                      type="button"
+                      onClick={copySignLink}
+                      className="text-[10px] text-brand-800 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copier le lien pour faire signer le client
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* Signature M-It LevelUp (Cachet officiel d'entreprise et signature du gérant en bleu nuit & noir) */}

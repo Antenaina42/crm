@@ -17,6 +17,9 @@ import {
   Eye,
   Edit2,
   Download,
+  Copy,
+  Clock,
+  ExternalLink,
 } from "lucide-react";
 import { formatAriary, formatCurrency, getCurrencySymbol, formatDate } from "@/lib/formatters";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
@@ -174,6 +177,14 @@ export function ProformasListView({
     }
   };
 
+  const copySignLink = (token?: string) => {
+    if (!token) return;
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://crm.m-itlevelup.com";
+    const url = `${origin}/sign/${token}`;
+    navigator.clipboard.writeText(url);
+    alert(`Lien de signature client copié dans le presse-papier :\n${url}`);
+  };
+
   const filtered = proformas.filter((pro) => {
     const recipient =
       pro.client?.company ||
@@ -247,13 +258,14 @@ export function ProformasListView({
                 <th className="p-4 text-right">Total TTC</th>
                 <th className="p-4 text-right">Acompte</th>
                 <th className="p-4">Statut</th>
+                <th className="p-4">Signature</th>
                 <th className="p-4 text-right">Actions (Visualiser / CRUD)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-400 text-sm">
+                  <td colSpan={9} className="p-8 text-center text-slate-400 text-sm">
                     Aucune proforma trouvée.
                   </td>
                 </tr>
@@ -265,9 +277,11 @@ export function ProformasListView({
                     `${pro.prospect?.firstName || ""} ${pro.prospect?.lastName || ""}`.trim() ||
                     "Client";
                   const phone = pro.client?.phone || pro.prospect?.phone || "261345403898";
+                  const originUrl = typeof window !== "undefined" ? window.location.origin : "https://crm.m-itlevelup.com";
+                  const signUrl = pro.signToken ? `${originUrl}/sign/${pro.signToken}` : "";
                   const waUrl = buildWhatsAppUrl(
                     phone,
-                    `Bonjour ${recipientName}, veuillez trouver ci-joint votre facture proforma ${pro.proformaNumber} d'un montant de ${formatCurrency(pro.total, pro.currency || "Ar")} (Acompte 50% : ${formatCurrency(pro.depositAmount, pro.currency || "Ar")}).`
+                    `Bonjour ${recipientName},\n\nVeuillez trouver ci-joint votre devis / Facture Proforma officielle *${pro.proformaNumber}* d'un montant de *${formatCurrency(pro.total, pro.currency || "Ar")}* (Acompte 50% au lancement : *${formatCurrency(pro.depositAmount, pro.currency || "Ar")}*).\n\n✍️ *Valider et signer votre Bon pour Accord en ligne* :\n${signUrl}\n\nCordialement,\n*M-It LevelUp*`
                   );
 
                   return (
@@ -294,7 +308,38 @@ export function ProformasListView({
                           {pro.status}
                         </span>
                       </td>
+                      <td className="p-4 whitespace-nowrap">
+                        {pro.signatureClient ? (
+                          <span
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            title={`Signé par ${pro.signerName || "Client"} ${pro.signedAt ? `le ${formatDate(pro.signedAt)}` : ""}`}
+                          >
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>Signé</span>
+                          </span>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium text-[10px] bg-amber-50 text-amber-700 border border-amber-200"
+                            title="En attente de signature client"
+                          >
+                            <Clock className="w-3 h-3 text-amber-600" />
+                            <span>En attente</span>
+                          </span>
+                        )}
+                      </td>
                       <td className="p-4 text-right space-x-1.5 whitespace-nowrap">
+                        {/* Bouton Copier le lien de signature */}
+                        {pro.signToken && (
+                          <button
+                            type="button"
+                            onClick={() => copySignLink(pro.signToken)}
+                            className="inline-flex items-center p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
+                            title="Copier le lien de signature électronique du bon pour accord"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
                         {/* Bouton Visualiser le PDF et Télécharger */}
                         <Link
                           href={`/proformas/${pro.id}`}
@@ -311,7 +356,7 @@ export function ProformasListView({
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
-                          title="Envoyer via WhatsApp"
+                          title="Envoyer via WhatsApp (avec lien de signature)"
                         >
                           <Send className="w-3.5 h-3.5" />
                         </a>

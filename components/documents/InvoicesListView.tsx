@@ -16,6 +16,9 @@ import {
   DollarSign,
   AlertCircle,
   Calendar,
+  Copy,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import { formatAriary, formatCurrency, getCurrencySymbol, formatDate } from "@/lib/formatters";
 import { buildWhatsAppUrl, generateInvoiceMessage } from "@/lib/whatsapp";
@@ -118,6 +121,14 @@ export function InvoicesListView({ initialInvoices, clients }: InvoicesListViewP
     }
   };
 
+  const copySignLink = (token?: string) => {
+    if (!token) return;
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://crm.m-itlevelup.com";
+    const url = `${origin}/sign/${token}`;
+    navigator.clipboard.writeText(url);
+    alert(`Lien de signature client copié dans le presse-papier :\n${url}`);
+  };
+
   const filtered = invoices.filter((inv) => {
     const matchesSearch =
       `${inv.invoiceNumber} ${inv.baseNumber || ""} ${inv.client?.company || inv.client?.name}`
@@ -189,21 +200,19 @@ export function InvoicesListView({ initialInvoices, clients }: InvoicesListViewP
                 <th className="p-4">Échéance</th>
                 <th className="p-4 text-right">Total HT & TTC</th>
                 <th className="p-4 text-right">Reste Dû</th>
-                <th className="p-4">Statut</th>
+                <th className="p-4">Paiement</th>
+                <th className="p-4">Signature</th>
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.map((inv) => {
                 const clientPhone = inv.client?.whatsapp || inv.client?.phone?.replace(/[^0-9]/g, "");
+                const originUrl = typeof window !== "undefined" ? window.location.origin : "https://crm.m-itlevelup.com";
+                const signUrl = inv.signToken ? `${originUrl}/sign/${inv.signToken}` : "";
                 const waUrl = buildWhatsAppUrl(
                   clientPhone || "261345403898",
-                  generateInvoiceMessage({
-                    clientName: inv.client?.name || "Client",
-                    invoiceNumber: inv.invoiceNumber,
-                    totalAmount: formatCurrency(inv.total, inv.currency || "Ar"),
-                    dueAmount: formatCurrency(inv.remainingAmount || inv.total, inv.currency || "Ar"),
-                  })
+                  `Bonjour ${inv.client?.name || "Client"},\n\nVeuillez trouver votre facture officielle *${inv.invoiceNumber}* d'un montant de *${formatCurrency(inv.total, inv.currency || "Ar")}* (Reste dû : *${formatCurrency(inv.remainingAmount || inv.total, inv.currency || "Ar")}*).\n\n✍️ *Signer directement votre facture en ligne* :\n${signUrl}\n\nRèglement par MVola (+261 34 54 038 98) ou virement.\n\nMerci pour votre confiance !\n*M-It LevelUp*`
                 );
 
                 return (
@@ -243,13 +252,42 @@ export function InvoicesListView({ initialInvoices, clients }: InvoicesListViewP
                         {inv.status.replace("_", " ")}
                       </span>
                     </td>
+                    <td className="p-4 whitespace-nowrap">
+                      {inv.signatureClient ? (
+                        <span
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          title={`Signé par ${inv.signerName || "Client"} ${inv.signedAt ? `le ${formatDate(inv.signedAt)}` : ""}`}
+                        >
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>Signé</span>
+                        </span>
+                      ) : (
+                        <span
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium text-[10px] bg-amber-50 text-amber-700 border border-amber-200"
+                          title="En attente de signature client"
+                        >
+                          <Clock className="w-3 h-3 text-amber-600" />
+                          <span>Non signé</span>
+                        </span>
+                      )}
+                    </td>
                     <td className="p-4 text-right space-x-1.5 whitespace-nowrap">
+                      {inv.signToken && (
+                        <button
+                          type="button"
+                          onClick={() => copySignLink(inv.signToken)}
+                          className="inline-flex items-center p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
+                          title="Copier le lien de signature électronique client"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       <a
                         href={waUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                        title="Envoyer WhatsApp"
+                        title="Envoyer par WhatsApp (avec lien de signature)"
                       >
                         <Send className="w-3.5 h-3.5" />
                       </a>

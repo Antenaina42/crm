@@ -225,10 +225,18 @@ model Proforma {
   conditions     String?        @db.Text
   notes          String?        @db.Text
   status         ProformaStatus @default(BROUILLON)
+  signToken      String?        @unique @default(uuid())
+  signatureClient Boolean       @default(false)
+  signedAt       DateTime?
+  signerName     String?
+  signerIp       String?
+  signatureHash  String?
+  signatureDataUrl String?      @db.LongText
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
   items          ProformaItem[]
+  signatures     Signature[]
 
   @@map("proformas")
 }
@@ -283,6 +291,12 @@ model Invoice {
   notes           String?       @db.Text
   signatureMiora  Boolean       @default(true)
   signatureClient Boolean       @default(false)
+  signToken       String?       @unique @default(uuid())
+  signedAt        DateTime?
+  signerName      String?
+  signerIp        String?
+  signatureHash   String?
+  signatureDataUrl String?      @db.LongText
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -390,6 +404,8 @@ model Signature {
   contract      Contract? @relation(fields: [contractId], references: [id])
   invoiceId     String?
   invoice       Invoice?  @relation(fields: [invoiceId], references: [id])
+  proformaId    String?
+  proforma      Proforma? @relation(fields: [proformaId], references: [id])
   signerName    String
   signerRole    String?
   ipAddress     String?

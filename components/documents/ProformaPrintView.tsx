@@ -11,8 +11,13 @@ import {
   Download,
   Receipt,
   FileCheck2,
+  Copy,
+  Check,
+  ExternalLink,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
-import { formatAriary, formatCurrency, getCurrencySymbol, formatDate } from "@/lib/formatters";
+import { formatAriary, formatCurrency, getCurrencySymbol, formatDate, formatDateTime } from "@/lib/formatters";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { CompanyStampSignature } from "./CompanyStampSignature";
 
@@ -24,9 +29,19 @@ interface ProformaPrintViewProps {
 export function ProformaPrintView({ proforma, companySettings }: ProformaPrintViewProps) {
   const router = useRouter();
   const [isConverting, setIsConverting] = useState(false);
+  const [copiedSignLink, setCopiedSignLink] = useState(false);
 
   const currency = proforma.currency || companySettings?.currency || "Ar";
   const currencySym = getCurrencySymbol(currency);
+
+  const signToken = proforma.signToken;
+  const copySignLink = () => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://crm.m-itlevelup.com";
+    const url = `${origin}/sign/${signToken}`;
+    navigator.clipboard.writeText(url);
+    setCopiedSignLink(true);
+    setTimeout(() => setCopiedSignLink(false), 2500);
+  };
 
   const handlePrint = () => {
     const originalTitle = document.title;
@@ -50,7 +65,9 @@ export function ProformaPrintView({ proforma, companySettings }: ProformaPrintVi
     proforma.prospect?.phone?.replace(/[^0-9]/g, "") ||
     "261345403898";
 
-  const waMsg = `Bonjour ${recipientName},\n\nVeuillez trouver ci-joint votre devis / Facture Proforma officielle ${proforma.proformaNumber} émise par M-It LevelUp pour un montant total de ${formatCurrency(proforma.total, currency)} (Acompte de 50% au lancement : ${formatCurrency(proforma.depositAmount, currency)}).\n\nNous restons disponibles pour le démarrage de votre projet.\n\nCordialement,\nM-It LevelUp`;
+  const originUrl = typeof window !== "undefined" ? window.location.origin : "https://crm.m-itlevelup.com";
+  const signUrl = `${originUrl}/sign/${signToken}`;
+  const waMsg = `Bonjour ${recipientName},\n\nVeuillez trouver ci-joint votre devis / Facture Proforma officielle *${proforma.proformaNumber}* émise par M-It LevelUp pour un montant total de *${formatCurrency(proforma.total, currency)}* (Acompte 50% au démarrage : *${formatCurrency(proforma.depositAmount, currency)}*).\n\n✍️ *Valider et signer votre Bon pour Accord en ligne* :\n${signUrl}\n\nNous restons disponibles pour le lancement de votre projet.\n\nCordialement,\n*M-It LevelUp*`;
 
   const waUrl = buildWhatsAppUrl(recipientPhone, waMsg);
 
@@ -108,10 +125,28 @@ export function ProformaPrintView({ proforma, companySettings }: ProformaPrintVi
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <h2 className="text-base font-bold text-slate-900">
-              {proforma.proformaNumber}
-            </h2>
-            <p className="text-xs text-slate-500">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base font-bold text-slate-900">
+                {proforma.proformaNumber}
+              </h2>
+              {/* Statut Proforma */}
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                {proforma.status}
+              </span>
+              {/* Statut Signature Client */}
+              {proforma.signatureClient ? (
+                <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  Bon pour accord signé par {proforma.signerName || "Client"} {proforma.signedAt ? `(${formatDate(proforma.signedAt)})` : ""}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                  <Clock className="w-3 h-3 text-amber-600" />
+                  En attente de signature client
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
               {recipientName} • Validité jusqu'au :{" "}
               <span className="font-bold text-slate-700">
                 {formatDate(proforma.validityDate)}
@@ -120,35 +155,67 @@ export function ProformaPrintView({ proforma, companySettings }: ProformaPrintVi
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Bouton Télécharger / Imprimer PDF A4 */}
           <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
             title="Imprimer ou enregistrer en PDF via votre navigateur"
           >
             <Download className="w-4 h-4 text-cyan-400" />
-            <span>Imprimer / Télécharger PDF</span>
+            <span>Imprimer / PDF</span>
           </button>
 
-          {/* Envoi WhatsApp */}
+          {/* Bouton Copier Lien Signature */}
+          <button
+            onClick={copySignLink}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
+            title="Copier le lien direct de signature du bon pour accord"
+          >
+            {copiedSignLink ? (
+              <>
+                <Check className="w-4 h-4 text-emerald-600" />
+                <span className="text-emerald-700 font-bold">Lien Copié !</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4 text-slate-600" />
+                <span>Lien Signature</span>
+              </>
+            )}
+          </button>
+
+          {/* Aperçu Vue Client */}
+          <a
+            href={`/sign/${signToken}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold shadow-xs transition-all active:scale-95"
+            title="Ouvrir la page de signature que voit le client"
+          >
+            <ExternalLink className="w-4 h-4 text-brand-800" />
+            <span>Vue Client</span>
+          </a>
+
+          {/* Envoi WhatsApp avec lien de signature inclus */}
           <a
             href={waUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all active:scale-95"
+            title="Envoyer la proforma et le lien de signature par WhatsApp"
           >
             <Send className="w-4 h-4" />
-            <span>Envoyer WhatsApp</span>
+            <span>WhatsApp (avec lien)</span>
           </a>
 
           {/* Conversion en Facture */}
           <button
             onClick={handleConvertToInvoice}
             disabled={isConverting}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-800 hover:bg-brand-900 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-800 hover:bg-brand-900 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
-            <Receipt className="w-4 h-4" />
+            <FileCheck2 className="w-4 h-4 text-emerald-400" />
             <span>{isConverting ? "Conversion..." : "Convertir en Facture"}</span>
           </button>
         </div>
@@ -340,16 +407,49 @@ export function ProformaPrintView({ proforma, companySettings }: ProformaPrintVi
         {/* Signatures officielles */}
         <div className="mt-4 pt-1 flex flex-col sm:flex-row justify-between items-end gap-6 text-xs avoid-break">
           {/* Visa Client */}
-          <div className="w-56 text-left">
-            <p className="font-extrabold text-slate-950 mb-4 text-xs">
+          <div className="w-64 text-left">
+            <p className="font-extrabold text-slate-950 mb-2 text-xs">
               {recipientName}
             </p>
-            <div className="h-11 border-b-2 border-dashed border-slate-300 flex items-center justify-center text-[10px] text-slate-400 italic">
-              Bon pour accord &amp; Signature Client
-            </div>
-            <p className="text-[9px] text-slate-400 mt-1">
-              Date &amp; mention manuscrite « Bon pour accord »
-            </p>
+            {proforma.signatureClient && proforma.signatureDataUrl ? (
+              <div className="p-2 border border-emerald-300 rounded-xl bg-emerald-50/40">
+                <img
+                  src={proforma.signatureDataUrl}
+                  alt="Signature Client"
+                  className="h-12 max-w-full object-contain mx-auto"
+                />
+                <div className="text-[10px] text-emerald-800 font-bold mt-1">
+                  ✓ Bon pour accord signé par {proforma.signerName || "Client"}
+                </div>
+                <div className="text-[9px] text-slate-500 font-mono">
+                  Le {formatDateTime(proforma.signedAt)} • IP : {proforma.signerIp || "127.0.0.1"}
+                </div>
+                <div className="text-[8px] text-slate-400 font-mono truncate">
+                  Hash : {proforma.signatureHash?.substring(0, 20)}...
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="h-11 border-b-2 border-dashed border-slate-300 flex items-center justify-center text-[10px] text-slate-400 italic">
+                  Bon pour accord &amp; Signature Client
+                </div>
+                <p className="text-[9px] text-slate-400 mt-1">
+                  Date &amp; mention manuscrite « Bon pour accord »
+                </p>
+                {!proforma.signatureClient && (
+                  <div className="no-print mt-1.5">
+                    <button
+                      type="button"
+                      onClick={copySignLink}
+                      className="text-[10px] text-brand-800 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copier le lien pour faire signer le client
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* Signature M-It LevelUp */}

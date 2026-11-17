@@ -32,5 +32,15 @@ export default async function InvoiceDetailPage({
     notFound();
   }
 
+  if (!invoice.signToken) {
+    const crypto = await import("crypto");
+    const signToken = crypto.randomUUID();
+    await prisma.invoice.update({
+      where: { id: invoice.id },
+      data: { signToken },
+    });
+    invoice.signToken = signToken;
+  }
+
   return <InvoicePrintView invoice={invoice} companySettings={companySettings} />;
 }

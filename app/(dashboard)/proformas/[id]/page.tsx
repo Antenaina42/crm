@@ -26,5 +26,15 @@ export default async function ProformaDetailPage({
     notFound();
   }
 
+  if (!proforma.signToken) {
+    const crypto = await import("crypto");
+    const signToken = crypto.randomUUID();
+    await prisma.proforma.update({
+      where: { id: proforma.id },
+      data: { signToken },
+    });
+    proforma.signToken = signToken;
+  }
+
   return <ProformaPrintView proforma={proforma} companySettings={companySettings} />;
 }
