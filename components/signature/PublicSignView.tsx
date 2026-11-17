@@ -352,20 +352,41 @@ export function PublicSignView({
                 </p>
 
                 {/* Modalités Acompte */}
-                {doc.depositPercent && (
-                  <div className="pt-2 border-t border-slate-200/60 grid grid-cols-2 gap-2 text-[11px]">
-                    <div>
-                      <span className="text-slate-500 block">Acompte requis ({doc.depositPercent}%) :</span>
-                      <span className="font-bold text-emerald-800">
-                        {formatCurrency(doc.depositAmount, currency)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block">Reste dû à la livraison :</span>
-                      <span className="font-bold text-slate-800">
-                        {formatCurrency(doc.remainingAmount || doc.remainderAmount, currency)}
-                      </span>
-                    </div>
+                {doc.depositPercent !== undefined && doc.depositPercent !== null && (
+                  <div className="pt-2 border-t border-slate-200/60 text-[11px]">
+                    {doc.depositPercent === 0 ? (
+                      <div className="bg-emerald-50/80 border border-emerald-200 p-2.5 rounded-xl text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <div>
+                          <span className="font-bold block">Modalité de règlement :</span>
+                          <span className="text-emerald-700 text-[10px]">Aucun acompte exigé au démarrage</span>
+                        </div>
+                        <span className="font-extrabold text-emerald-900 text-xs bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-300/60 self-start sm:self-auto">
+                          Paiement 100% à la livraison
+                        </span>
+                      </div>
+                    ) : doc.depositPercent === 100 ? (
+                      <div className="bg-emerald-50/80 border border-emerald-200 p-2.5 rounded-xl text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <span className="font-bold">Modalité de règlement :</span>
+                        <span className="font-extrabold text-emerald-900 text-xs bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-300/60">
+                          Règlement intégral 100% à la commande
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-slate-500 block">Acompte requis ({doc.depositPercent}%) :</span>
+                          <span className="font-bold text-emerald-800">
+                            {formatCurrency(doc.depositAmount, currency)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block">Reste dû à la livraison :</span>
+                          <span className="font-bold text-slate-800">
+                            {formatCurrency(doc.remainingAmount || doc.remainderAmount, currency)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

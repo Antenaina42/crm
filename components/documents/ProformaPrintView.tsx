@@ -65,9 +65,16 @@ export function ProformaPrintView({ proforma, companySettings }: ProformaPrintVi
     proforma.prospect?.phone?.replace(/[^0-9]/g, "") ||
     "261345403898";
 
+  const depositInfo =
+    proforma.depositPercent === 0
+      ? "Paiement 100% à la livraison (aucun acompte requis)"
+      : proforma.depositPercent === 100
+      ? `Règlement intégral : ${formatCurrency(proforma.total, currency)}`
+      : `Acompte ${proforma.depositPercent ?? 50}% au démarrage : ${formatCurrency(proforma.depositAmount, currency)}`;
+
   const originUrl = typeof window !== "undefined" ? window.location.origin : "https://crm.m-itlevelup.com";
   const signUrl = `${originUrl}/sign/${signToken}`;
-  const waMsg = `Bonjour ${recipientName},\n\nVeuillez trouver ci-joint votre devis / Facture Proforma officielle *${proforma.proformaNumber}* émise par M-It LevelUp pour un montant total de *${formatCurrency(proforma.total, currency)}* (Acompte 50% au démarrage : *${formatCurrency(proforma.depositAmount, currency)}*).\n\n✍️ *Valider et signer votre Bon pour Accord en ligne* :\n${signUrl}\n\nNous restons disponibles pour le lancement de votre projet.\n\nCordialement,\n*M-It LevelUp*`;
+  const waMsg = `Bonjour ${recipientName},\n\nVeuillez trouver ci-joint votre devis / Facture Proforma officielle *${proforma.proformaNumber}* émise par M-It LevelUp pour un montant total de *${formatCurrency(proforma.total, currency)}* (${depositInfo}).\n\n✍️ *Valider et signer votre Bon pour Accord en ligne* :\n${signUrl}\n\nNous restons disponibles pour le lancement de votre projet.\n\nCordialement,\n*M-It LevelUp*`;
 
   const waUrl = buildWhatsAppUrl(recipientPhone, waMsg);
 
@@ -76,16 +83,21 @@ export function ProformaPrintView({ proforma, companySettings }: ProformaPrintVi
       alert("Pour convertir cette proforma en facture officielle, elle doit être rattachée à un client.");
       return;
     }
-    if (!confirm(`Convertir la proforma ${proforma.proformaNumber} en facture d'acompte officielle ?`)) return;
+    const confirmMsg = proforma.depositPercent === 0
+      ? `Convertir la proforma ${proforma.proformaNumber} en facture officielle (Paiement 100% livraison) ?`
+      : `Convertir la proforma ${proforma.proformaNumber} en facture d'acompte officielle (${proforma.depositPercent ?? 50}%) ?`;
+    if (!confirm(confirmMsg)) return;
 
     setIsConverting(true);
     try {
+      const isZeroDeposit = proforma.depositPercent === 0;
       const res = await fetch("/api/invoices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientId: proforma.clientId,
-          type: "ACOMPTE_50",
+          type: isZeroDeposit ? "STANDARD" : proforma.depositPercent === 100 ? "SOLDE" : "ACOMPTE_50",
+          depositPercent: proforma.depositPercent !== undefined && proforma.depositPercent !== null ? proforma.depositPercent : 50,
           items: proforma.items.map((it: any) => ({
             description: it.description,
             quantity: it.quantity,
@@ -93,7 +105,9 @@ export function ProformaPrintView({ proforma, companySettings }: ProformaPrintVi
           })),
           discount: proforma.discount,
           currency: proforma.currency || "Ar",
-          paymentTerms: `Acompte 50% suite acceptation proforma ${proforma.proformaNumber}`,
+          paymentTerms: isZeroDeposit
+            ? `Paiement 100% à la livraison suite acceptation proforma ${proforma.proformaNumber}`
+            : `Acompte ${proforma.depositPercent ?? 50}% suite acceptation proforma ${proforma.proformaNumber}`,
           notes: `Généré automatiquement depuis la facture proforma ${proforma.proformaNumber}`,
         }),
       });
@@ -371,18 +385,31 @@ export function ProformaPrintView({ proforma, companySettings }: ProformaPrintVi
           {/* Conditions de règlement */}
           <div className="pt-2.5 text-xs font-medium text-slate-800 space-y-1">
             <p className="font-bold text-slate-950 text-xs">Modalités de règlement :</p>
-            <p className="text-slate-700 text-[11px]">
-              • Acompte de {proforma.depositPercent || 50}% à la commande :{" "}
-              <span className="font-bold text-slate-950">
-                {formatCurrency(proforma.depositAmount, currency)}
-              </span>
-            </p>
-            <p className="text-slate-700 text-[11px]">
-              • Reste à la livraison et mise en production :{" "}
-              <span className="font-bold text-slate-950">
-                {formatCurrency(proforma.remainderAmount, currency)}
-              </span>
-            </p>
+            {proforma.depositPercent === 0 ? (
+              <p className="text-slate-700 text-[11px]">
+                • <span className="font-bold text-slate-950">Paiement 100% à la livraison</span> (Aucun acompte exigé au démarrage).
+              </p>
+            ) : proforma.depositPercent === 100 ? (
+              <p className="text-slate-700 text-[11px]">
+                • <span className="font-bold text-slate-950">Règlement intégral (100%) à la commande</span> :{" "}
+                <span className="font-bold text-slate-950">{formatCurrency(proforma.total, currency)}</span>
+              </p>
+            ) : (
+              <>
+                <p className="text-slate-700 text-[11px]">
+                  • Acompte de {proforma.depositPercent ?? 50}% à la commande :{" "}
+                  <span className="font-bold text-slate-950">
+                    {formatCurrency(proforma.depositAmount, currency)}
+                  </span>
+                </p>
+                <p className="text-slate-700 text-[11px]">
+                  • Reste à la livraison et mise en production :{" "}
+                  <span className="font-bold text-slate-950">
+                    {formatCurrency(proforma.remainderAmount, currency)}
+                  </span>
+                </p>
+              </>
+            )}
             {proforma.conditions && (
               <p className="text-slate-500 italic text-[11px] pt-0.5">{proforma.conditions}</p>
             )}

@@ -32,9 +32,17 @@ export async function POST(req: NextRequest) {
     );
     const discount = Number(body.discount || 0);
     const total = Math.max(0, subtotal - discount);
-    const depositPercent = Number(body.depositPercent || 50);
+    const depositPercent = body.depositPercent !== undefined && body.depositPercent !== null
+      ? Number(body.depositPercent)
+      : 50;
     const depositAmount = (total * depositPercent) / 100;
     const remainderAmount = total - depositAmount;
+
+    const defaultConditions = depositPercent === 0
+      ? "Facture Proforma valable 30 jours. TVA non applicable – entreprise non assujettie à la TVA. Paiement 100% à la livraison (aucun acompte requis)."
+      : depositPercent === 100
+      ? "Facture Proforma valable 30 jours. TVA non applicable – entreprise non assujettie à la TVA. Règlement intégral (100%) à la commande."
+      : `Facture Proforma valable 30 jours. TVA non applicable – entreprise non assujettie à la TVA. Acompte de ${depositPercent}% au lancement des développements, ${100 - depositPercent}% à la livraison.`;
 
     const proforma = await prisma.proforma.create({
       data: {
@@ -50,7 +58,7 @@ export async function POST(req: NextRequest) {
         depositAmount,
         remainderAmount,
         currency: body.currency || "Ar",
-        conditions: body.conditions || "Facture Proforma valable 30 jours. TVA non applicable – entreprise non assujettie à la TVA. Acompte de 50% au lancement.",
+        conditions: body.conditions || defaultConditions,
         notes: body.notes || "M-It LevelUp vous remercie pour votre confiance. Prestation garantie avec support et accompagnement technique dédié.",
         status: ProformaStatus.ENVOYEE,
         items: {

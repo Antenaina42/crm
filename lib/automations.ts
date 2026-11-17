@@ -137,7 +137,7 @@ export async function onOfferAccepted(offerId: string) {
     data: {
       invoiceNumber,
       clientId,
-      type: InvoiceType.ACOMPTE,
+      type: offer.depositPercent === 0 ? InvoiceType.STANDARD : InvoiceType.ACOMPTE,
       date: new Date(),
       dueDate,
       subtotal: offer.total,
@@ -146,11 +146,14 @@ export async function onOfferAccepted(offerId: string) {
       total: offer.total,
       depositPercent: offer.depositPercent,
       depositAmount: offer.depositAmount,
-      remainingAmount: offer.depositAmount, // Montant à régler pour l'acompte
+      remainingAmount: offer.depositPercent === 0 ? offer.total : offer.depositAmount,
       currency: offer.currency || "Ar",
       amountInWords: numberToFrenchWords(offer.total, offer.currency || "Ar"),
       status: InvoiceStatus.ENVOYEE,
-      paymentTerms: `Acompte de ${offer.depositPercent}% requis au démarrage. Reste dû à la livraison : ${offer.remainderAmount.toLocaleString("fr-FR")} ${offer.currency || "Ar"}.`,
+      paymentTerms:
+        offer.depositPercent === 0
+          ? "Paiement 100% à la livraison (aucun acompte requis au démarrage)."
+          : `Acompte de ${offer.depositPercent}% requis au démarrage. Reste dû à la livraison : ${offer.remainderAmount.toLocaleString("fr-FR")} ${offer.currency || "Ar"}.`,
       items: {
         create: offer.items.map((item) => ({
           description: item.description,

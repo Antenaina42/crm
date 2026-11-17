@@ -88,6 +88,31 @@ export function ProformasListView({
   const depositAmount = (total * depositPercent) / 100;
   const remainderAmount = total - depositAmount;
 
+  const handleDepositChange = (percent: number) => {
+    setDepositPercent(percent);
+    const isStandardCondition =
+      !conditions ||
+      conditions.includes("Acompte de") ||
+      conditions.includes("Paiement 100% à la livraison") ||
+      conditions.includes("Règlement intégral");
+
+    if (isStandardCondition) {
+      if (percent === 0) {
+        setConditions(
+          "Facture Proforma valable 30 jours. TVA non applicable – entreprise non assujettie à la TVA. Paiement 100% à la livraison (aucun acompte requis)."
+        );
+      } else if (percent === 100) {
+        setConditions(
+          "Facture Proforma valable 30 jours. TVA non applicable – entreprise non assujettie à la TVA. Règlement intégral (100%) à la commande."
+        );
+      } else {
+        setConditions(
+          `Facture Proforma valable 30 jours. TVA non applicable – entreprise non assujettie à la TVA. Acompte de ${percent}% au lancement des développements, ${100 - percent}% à la livraison.`
+        );
+      }
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -121,7 +146,7 @@ export function ProformasListView({
   const openEdit = (pro: any) => {
     setEditingProforma(pro);
     setCurrency(pro.currency || "Ar");
-    setDepositPercent(pro.depositPercent || 50);
+    setDepositPercent(pro.depositPercent !== undefined && pro.depositPercent !== null ? pro.depositPercent : 50);
     setDiscount(pro.discount || 0);
     setConditions(pro.conditions || "");
     setNotes(pro.notes || "");
@@ -279,9 +304,16 @@ export function ProformasListView({
                   const phone = pro.client?.phone || pro.prospect?.phone || "261345403898";
                   const originUrl = typeof window !== "undefined" ? window.location.origin : "https://crm.m-itlevelup.com";
                   const signUrl = pro.signToken ? `${originUrl}/sign/${pro.signToken}` : "";
+                  const depositInfo =
+                    pro.depositPercent === 0
+                      ? "Paiement 100% à la livraison (aucun acompte requis)"
+                      : pro.depositPercent === 100
+                      ? `Règlement intégral : ${formatCurrency(pro.total, pro.currency || "Ar")}`
+                      : `Acompte ${(pro.depositPercent ?? 50)}% au lancement : ${formatCurrency(pro.depositAmount, pro.currency || "Ar")}`;
+
                   const waUrl = buildWhatsAppUrl(
                     phone,
-                    `Bonjour ${recipientName},\n\nVeuillez trouver ci-joint votre devis / Facture Proforma officielle *${pro.proformaNumber}* d'un montant de *${formatCurrency(pro.total, pro.currency || "Ar")}* (Acompte 50% au lancement : *${formatCurrency(pro.depositAmount, pro.currency || "Ar")}*).\n\n✍️ *Valider et signer votre Bon pour Accord en ligne* :\n${signUrl}\n\nCordialement,\n*M-It LevelUp*`
+                    `Bonjour ${recipientName},\n\nVeuillez trouver ci-joint votre devis / Facture Proforma officielle *${pro.proformaNumber}* d'un montant de *${formatCurrency(pro.total, pro.currency || "Ar")}* (${depositInfo}).\n\n✍️ *Valider et signer votre Bon pour Accord en ligne* :\n${signUrl}\n\nCordialement,\n*M-It LevelUp*`
                   );
 
                   return (
@@ -301,7 +333,13 @@ export function ProformasListView({
                         {formatCurrency(pro.total, pro.currency || "Ar")}
                       </td>
                       <td className="p-4 text-right font-bold text-brand-800">
-                        {formatCurrency(pro.depositAmount, pro.currency || "Ar")}
+                        {pro.depositPercent === 0 ? (
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                            0 % (100% livraison)
+                          </span>
+                        ) : (
+                          formatCurrency(pro.depositAmount, pro.currency || "Ar")
+                        )}
                       </td>
                       <td className="p-4">
                         <span className="px-2.5 py-1 rounded-full font-bold text-[11px] bg-slate-100 text-slate-700 border border-slate-200">
@@ -529,11 +567,12 @@ export function ProformasListView({
                   <label className="block text-xs font-bold text-slate-700 mb-1">Acompte à l'engagement (%)</label>
                   <select
                     value={depositPercent}
-                    onChange={(e) => setDepositPercent(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                    onChange={(e) => handleDepositChange(Number(e.target.value))}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 outline-none"
                   >
-                    <option value={50}>50 % (Standard M-It LevelUp)</option>
-                    <option value={30}>30 %</option>
+                    <option value={0}>0 % (Paiement 100% à la livraison)</option>
+                    <option value={30}>30 % (Acompte 30%, solde 70%)</option>
+                    <option value={50}>50 % (Standard M-It LevelUp - 50/50)</option>
                     <option value={100}>100 % (Règlement intégral)</option>
                   </select>
                 </div>
@@ -575,11 +614,11 @@ export function ProformasListView({
                   <span>{formatCurrency(total, currency)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-brand-800">
-                  <span>Acompte ({depositPercent}%) :</span>
+                  <span>{depositPercent === 0 ? "Acompte (0% - Aucun) :" : `Acompte (${depositPercent}%) :`}</span>
                   <span>{formatCurrency(depositAmount, currency)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-amber-700">
-                  <span>Reste à la livraison :</span>
+                  <span>{depositPercent === 0 ? "Solde dû à la livraison (100%) :" : "Reste à la livraison :"}</span>
                   <span>{formatCurrency(remainderAmount, currency)}</span>
                 </div>
               </div>
@@ -688,14 +727,15 @@ export function ProformasListView({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Acompte (%)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Acompte à l'engagement (%)</label>
                   <select
                     value={depositPercent}
-                    onChange={(e) => setDepositPercent(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                    onChange={(e) => handleDepositChange(Number(e.target.value))}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 outline-none"
                   >
-                    <option value={50}>50 % (Standard)</option>
-                    <option value={30}>30 %</option>
+                    <option value={0}>0 % (Paiement 100% à la livraison)</option>
+                    <option value={30}>30 % (Acompte 30%, solde 70%)</option>
+                    <option value={50}>50 % (Standard M-It LevelUp - 50/50)</option>
                     <option value={100}>100 % (Intégral)</option>
                   </select>
                 </div>
@@ -714,7 +754,7 @@ export function ProformasListView({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Conditions</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Conditions de règlement</label>
                 <textarea
                   rows={2}
                   value={conditions}
@@ -744,8 +784,12 @@ export function ProformasListView({
                   <span className="font-bold text-slate-900">{formatCurrency(total, currency)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-brand-800">
-                  <span>Acompte ({depositPercent}%) :</span>
+                  <span>{depositPercent === 0 ? "Acompte (0% - Aucun) :" : `Acompte (${depositPercent}%) :`}</span>
                   <span>{formatCurrency(depositAmount, currency)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-amber-700">
+                  <span>{depositPercent === 0 ? "Solde dû à la livraison (100%) :" : "Reste à la livraison :"}</span>
+                  <span>{formatCurrency(remainderAmount, currency)}</span>
                 </div>
               </div>
 

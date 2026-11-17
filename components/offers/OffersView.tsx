@@ -603,12 +603,16 @@ export function OffersView({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Acompte demandé (%)</label>
-                  <input
-                    type="number"
+                  <select
                     value={depositPercent}
                     onChange={(e) => setDepositPercent(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none"
-                  />
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none font-medium"
+                  >
+                    <option value={0}>0 % (Paiement 100% à la livraison)</option>
+                    <option value={30}>30 %</option>
+                    <option value={50}>50 % (Standard M-It LevelUp)</option>
+                    <option value={100}>100 % (Règlement intégral)</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -637,11 +641,11 @@ export function OffersView({
                   <span>{formatCurrency(total, offerCurrency)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-brand-800">
-                  <span>Acompte ({depositPercent}%) :</span>
+                  <span>{depositPercent === 0 ? "Acompte (0% - Aucun) :" : `Acompte (${depositPercent}%) :`}</span>
                   <span>{formatCurrency(depositAmount, offerCurrency)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-amber-700">
-                  <span>Reste à payer :</span>
+                  <span>{depositPercent === 0 ? "Paiement 100% à la livraison :" : "Reste à payer :"}</span>
                   <span>{formatCurrency(remainderAmount, offerCurrency)}</span>
                 </div>
               </div>

@@ -32,6 +32,11 @@ export async function PUT(
 ) {
   const { id } = await params;
   try {
+    const existing = await prisma.proforma.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Proforma non trouvée" }, { status: 404 });
+    }
+
     const body = await req.json();
 
     const items = body.items;
@@ -40,6 +45,10 @@ export async function PUT(
     let depositAmount = body.depositAmount;
     let remainderAmount = body.remainderAmount;
 
+    const depositPercent = body.depositPercent !== undefined && body.depositPercent !== null
+      ? Number(body.depositPercent)
+      : (existing.depositPercent ?? 50);
+
     if (items && Array.isArray(items)) {
       subtotal = items.reduce(
         (sum: number, it: any) => sum + Number(it.unitPrice) * Number(it.quantity),
@@ -47,7 +56,6 @@ export async function PUT(
       );
       const discount = Number(body.discount || 0);
       total = Math.max(0, subtotal - discount);
-      const depositPercent = Number(body.depositPercent || 50);
       depositAmount = (total * depositPercent) / 100;
       remainderAmount = total - depositAmount;
 
@@ -62,6 +70,10 @@ export async function PUT(
           total: (Number(it.quantity) || 1) * (Number(it.unitPrice) || 0),
         })),
       });
+    } else if (body.depositPercent !== undefined) {
+      const currentTotal = existing.total;
+      depositAmount = (currentTotal * depositPercent) / 100;
+      remainderAmount = currentTotal - depositAmount;
     }
 
     const updated = await prisma.proforma.update({
@@ -69,7 +81,7 @@ export async function PUT(
       data: {
         status: body.status,
         discount: body.discount !== undefined ? Number(body.discount) : undefined,
-        depositPercent: body.depositPercent !== undefined ? Number(body.depositPercent) : undefined,
+        depositPercent: body.depositPercent !== undefined ? depositPercent : undefined,
         conditions: body.conditions,
         notes: body.notes,
         currency: body.currency,

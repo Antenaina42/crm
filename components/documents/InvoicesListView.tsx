@@ -376,7 +376,7 @@ export function InvoicesListView({ initialInvoices, clients }: InvoicesListViewP
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-2">Modalité d'Acompte</label>
                 <div className="grid grid-cols-4 gap-2 text-center">
-                  {[100, 50, 30].map((pct) => (
+                  {[100, 50, 30, 0].map((pct) => (
                     <button
                       key={pct}
                       type="button"
@@ -387,18 +387,19 @@ export function InvoicesListView({ initialInvoices, clients }: InvoicesListViewP
                           : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                       }`}
                     >
-                      {pct}% {pct === 100 ? "(Solde complet)" : "(Acompte)"}
+                      {pct}% {pct === 0 ? "(À la livraison)" : pct === 100 ? "(Solde)" : "(Acompte)"}
                     </button>
                   ))}
-                  <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-2">
+                  <div className="col-span-4 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 mt-1">
+                    <span className="text-xs text-slate-500 font-medium">Ou saisir un pourcentage personnalisé :</span>
                     <input
                       type="number"
-                      min="1"
+                      min="0"
                       max="100"
-                      placeholder="Autre %"
+                      placeholder="%"
                       value={depositPercent}
                       onChange={(e) => setDepositPercent(Number(e.target.value))}
-                      className="w-full text-xs font-bold bg-transparent outline-none text-center"
+                      className="w-16 text-xs font-bold bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none text-center"
                     />
                     <span className="text-xs font-bold text-slate-400">%</span>
                   </div>
@@ -481,12 +482,12 @@ export function InvoicesListView({ initialInvoices, clients }: InvoicesListViewP
                   <span>{formatCurrency(total, currency)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-brand-800 pt-1">
-                  <span>Acompte ({depositPercent}%) :</span>
+                  <span>{depositPercent === 0 ? "Acompte (0% - Aucun) :" : `Acompte (${depositPercent}%) :`}</span>
                   <span>{formatCurrency(depositAmount, currency)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-amber-700">
-                  <span>Reste à payer :</span>
-                  <span>{formatCurrency(remainderAmount, currency)}</span>
+                  <span>{depositPercent === 0 ? "Paiement 100% à la livraison :" : "Reste à payer :"}</span>
+                  <span>{formatCurrency(depositPercent === 0 ? total : remainderAmount, currency)}</span>
                 </div>
               </div>
 

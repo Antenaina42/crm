@@ -505,7 +505,9 @@ export function ClientDetailView({ client, userRole }: ClientDetailViewProps) {
                   <p className="text-xs text-slate-500 mt-0.5">{pr.description}</p>
                   <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-2">
                     <span>Montant : {formatAriary(pr.totalAmount)}</span>
-                    <span>• Acompte : {formatAriary(pr.depositAmount)}</span>
+                    <span>
+                      • {pr.depositAmount === 0 ? "Paiement 100% à la livraison" : `Acompte : ${formatAriary(pr.depositAmount)}`}
+                    </span>
                     <span>• Reste : {formatAriary(pr.remainderAmount)}</span>
                   </div>
                 </div>
