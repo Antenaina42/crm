@@ -241,25 +241,17 @@ export function ProformaPrintView({ proforma, companySettings }: ProformaPrintVi
         <div className="flex justify-between items-start pb-4 gap-6">
           {/* Bloc Gauche : Logo, Date, Émetteur */}
           <div className="space-y-3 flex-1">
-            {/* Logo M-It */}
-            <div className="flex items-center gap-3">
-              <div className="relative w-28 h-12 shrink-0">
+            {/* Logo Officiel M-It LevelUP */}
+            <div className="mb-2">
+              <div className="relative w-64 h-16 print:w-56 print:h-14">
                 <Image
-                  src="/logo-mit.png"
-                  alt="M-It Logo"
-                  width={112}
-                  height={48}
+                  src="/logo-official.jpg"
+                  alt="M-It LevelUP — Transformation Digitale"
+                  width={240}
+                  height={64}
                   className="object-contain object-left"
                   priority
                 />
-              </div>
-              <div className="border-l-2 border-slate-950 pl-3">
-                <span className="text-base font-black tracking-tight text-slate-950 block leading-tight">
-                  M-It LevelUp
-                </span>
-                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
-                  Digital Solutions
-                </span>
               </div>
             </div>
 

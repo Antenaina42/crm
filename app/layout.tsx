@@ -5,7 +5,12 @@ export const metadata: Metadata = {
   title: "CRM M-It LevelUp — Agence Digitale & Solutions Web",
   description: "Plateforme CRM interne, facturation, contrats, projets et suivi clients pour l'agence M-It LevelUp",
   icons: {
-    icon: "/logo-official.jpg",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/logo-official.jpg" },
+    ],
+    shortcut: "/favicon.svg",
+    apple: "/logo-official.jpg",
   },
   robots: {
     index: false,

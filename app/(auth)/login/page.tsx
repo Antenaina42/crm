@@ -42,20 +42,21 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-brand-50/30 to-indigo-50/20 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
-        {/* Logo M-It LevelUp */}
-        <div className="relative w-20 h-20 mx-auto rounded-2xl overflow-hidden shadow-md ring-1 ring-slate-900/10">
+        {/* Logo M-It LevelUP */}
+        <div className="relative w-64 h-16 mx-auto">
           <Image
             src="/logo-official.jpg"
-            alt="M-It LevelUp"
-            fill
-            className="object-cover"
+            alt="M-It LevelUP — Transformation Digitale"
+            width={240}
+            height={64}
+            className="object-contain mx-auto"
             priority
           />
         </div>
 
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            CRM M-It <span className="text-brand-800">LevelUp</span>
+            CRM M-It <span className="text-brand-800">LevelUP</span>
           </h2>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
             Plateforme interne de gestion commerciale, facturation et contrats

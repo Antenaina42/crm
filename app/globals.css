@@ -4,7 +4,13 @@
 
 :root {
   --background: #f8fafc;
-  --foreground: #0f172a;
+  --foreground: #111111;
+  --red: #e32636;
+  --red-dark: #b91c2c;
+  --ink: #111111;
+  --ink-2: #1c1c1e;
+  --muted: #60646c;
+  --line: #e5e7eb;
 }
 
 body {
@@ -12,6 +18,11 @@ body {
   color: var(--foreground);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: #e32636;
+  color: #ffffff;
 }
 
 /* Custom scrollbar */

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="M-It LevelUP">
+  <title>M-It LevelUP</title>
+  <rect x="1" y="1" width="62" height="62" rx="15" fill="#FAFAFA" stroke="#E5E7EB" stroke-width="2"/>
+  <!-- M : deux jambages et un V central, en noir -->
+  <path d="M12 47V18.5c0-1 1.2-1.5 1.9-.8L24.5 29l10.6-11.3c.7-.7 1.9-.2 1.9.8V47" fill="none" stroke="#111111" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- I : barre rouge surmontée d'une flèche "level up" -->
+  <path d="M48.5 47V26" fill="none" stroke="#E32636" stroke-width="5.4" stroke-linecap="round"/>
+  <path d="M42.5 21.5 48.5 15l6 6.5" fill="none" stroke="#E32636" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

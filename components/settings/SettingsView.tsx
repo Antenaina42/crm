@@ -301,12 +301,13 @@ export function SettingsView({ initialSettings, templates }: SettingsViewProps) 
         {/* Section 1 : Identité Entreprise */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-            <div className="relative w-12 h-12 rounded-xl overflow-hidden shadow-xs ring-1 ring-slate-900/5">
+            <div className="relative w-44 h-11">
               <Image
                 src="/logo-official.jpg"
-                alt="M-It Logo"
-                fill
-                className="object-cover"
+                alt="M-It LevelUP"
+                width={176}
+                height={44}
+                className="object-contain object-left"
                 priority
               />
             </div>

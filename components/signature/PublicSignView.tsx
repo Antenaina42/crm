@@ -213,22 +213,15 @@ export function PublicSignView({
         {/* Brand Header */}
         <div className="flex items-center justify-between bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="relative w-12 h-12 rounded-xl overflow-hidden shadow-xs ring-1 ring-slate-900/5">
+            <div className="relative w-52 h-12">
               <Image
                 src="/logo-official.jpg"
-                alt="M-It LevelUp"
-                fill
-                className="object-cover"
+                alt="M-It LevelUP — Transformation Digitale"
+                width={208}
+                height={48}
+                className="object-contain object-left"
                 priority
               />
-            </div>
-            <div>
-              <h2 className="font-bold text-slate-900 text-base">
-                M-It <span className="text-brand-800">LevelUp</span>
-              </h2>
-              <p className="text-[11px] text-slate-400 font-medium">
-                Plateforme Sécurisée de Signature Électronique
-              </p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full text-slate-600 text-xs font-semibold">

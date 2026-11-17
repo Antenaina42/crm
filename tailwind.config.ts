@@ -10,18 +10,23 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          50: "#f0f5fa",
-          100: "#e1ecf6",
-          200: "#c5daed",
-          300: "#99bfdf",
-          400: "#669ecc",
-          500: "#3b7eb3",
-          600: "#1e5285",
-          700: "#133861",
-          800: "#0b1d3a", // Bleu Nuit Profond / Midnight Blue
-          900: "#061226", // Bleu Nuit Sombre
-          950: "#020712", // Bleu Nuit jusqu'au Noir
-          DEFAULT: "#0b1d3a",
+          50: "#fff1f2",
+          100: "#fee2e2",
+          200: "#fecaca",
+          300: "#fca5a5",
+          400: "#f87171",
+          500: "#ef4444",
+          600: "#e32636", // Rouge Officiel M-It LevelUp (m-itlevelup.com)
+          700: "#b91c2c", // Rouge Foncé Hover
+          800: "#e32636", // Boutons et Actions Principales
+          900: "#b91c2c", // Hover Boutons et Liens
+          950: "#111111", // Noir Encre Officiel (--ink)
+          DEFAULT: "#e32636",
+        },
+        ink: {
+          DEFAULT: "#111111",
+          2: "#1c1c1e",
+          muted: "#60646c",
         },
         cyan: {
           50: "#ecfeff",

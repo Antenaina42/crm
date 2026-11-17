@@ -77,23 +77,29 @@ export function Sidebar({
       {/* Brand Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm ring-1 ring-slate-900/5 group-hover:scale-105 transition-transform duration-200">
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-xs ring-1 ring-slate-900/10 group-hover:scale-105 transition-transform duration-200 bg-[#FAFAFA] flex items-center justify-center p-1">
             <Image
-              src="/logo-official.jpg"
-              alt="M-It LevelUp"
-              fill
-              className="object-cover"
+              src="/favicon.svg"
+              alt="M-It LevelUP"
+              width={34}
+              height={34}
+              className="object-contain"
               priority
             />
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-900 text-base tracking-tight">
-                M-It <span className="text-brand-800">LevelUp</span>
+            <div className="flex items-center gap-1">
+              <span className="font-extrabold text-[#111111] text-base tracking-tight font-sans">
+                M-It <span className="text-[#E32636]">LevelUP</span>
+              </span>
+              <span className="inline-flex items-end gap-[2px] h-3 ml-0.5" title="M-It LevelUP">
+                <span className="w-[3px] h-1.5 bg-[#E32636] opacity-35 rounded-full" />
+                <span className="w-[3px] h-2.5 bg-[#E32636] opacity-65 rounded-full" />
+                <span className="w-[3px] h-3 bg-[#E32636] rounded-full" />
               </span>
             </div>
-            <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-              {isCommercial ? "Espace Commercial" : "Digital Agency CRM"}
+            <p className="text-[10px] font-bold text-[#60646C] uppercase tracking-wider">
+              {isCommercial ? "Espace Commercial" : "Transformation Digitale"}
             </p>
           </div>
         </Link>
