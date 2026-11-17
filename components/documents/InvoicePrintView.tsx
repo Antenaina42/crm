@@ -205,14 +205,22 @@ export function InvoicePrintView({ invoice, companySettings }: InvoicePrintViewP
             </h3>
             <form onSubmit={handleRecordPayment} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Montant perçu (Ar) *</label>
-                <input
-                  type="number"
-                  required
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white outline-none"
-                />
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Montant perçu ({currencySym}) *
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white outline-none font-bold text-slate-900 pr-12"
+                  />
+                  <span className="absolute right-3 top-2.5 text-xs font-black text-brand-800">
+                    {currencySym}
+                  </span>
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Méthode de paiement *</label>

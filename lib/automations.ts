@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 import { logActivity } from "./audit";
 import { InvoiceStatus, InvoiceType, ProjectStatus, TaskPriority, NotificationType, AssetStatus } from "@prisma/client";
-import { numberToFrenchWords } from "./formatters";
+import { numberToFrenchWords, formatCurrency } from "./formatters";
 
 /**
  * Automatisation lors de l'acceptation d'une offre commerciale
@@ -287,10 +287,12 @@ export async function onPaymentRecorded(paymentId: string) {
     },
   });
 
+  const invCurrency = payment.invoice.currency || "Ar";
+
   await prisma.notification.create({
     data: {
       title: "Paiement reçu 💳",
-      message: `Paiement de ${payment.amount.toLocaleString("fr-FR")} Ar enregistré pour la facture ${payment.invoice.invoiceNumber}.`,
+      message: `Paiement de ${formatCurrency(payment.amount, invCurrency)} enregistré pour la facture ${payment.invoice.invoiceNumber}.`,
       type: NotificationType.PAIEMENT,
       link: `/invoices`,
     },
@@ -299,7 +301,7 @@ export async function onPaymentRecorded(paymentId: string) {
   await logActivity({
     clientId: payment.clientId,
     action: "PAIEMENT_ENREGISTRE",
-    details: `Encaissement de ${payment.amount.toLocaleString("fr-FR")} Ar via ${payment.method} pour ${payment.invoice.invoiceNumber}`,
+    details: `Encaissement de ${formatCurrency(payment.amount, invCurrency)} via ${payment.method} pour ${payment.invoice.invoiceNumber}`,
     entityType: "Payment",
     entityId: payment.id,
   });

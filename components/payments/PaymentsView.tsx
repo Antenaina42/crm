@@ -14,7 +14,7 @@ import {
   X,
   Trash2,
 } from "lucide-react";
-import { formatAriary, formatDate } from "@/lib/formatters";
+import { formatAriary, formatCurrency, getCurrencySymbol, formatDate } from "@/lib/formatters";
 
 interface PaymentsViewProps {
   initialPayments: any[];
@@ -46,6 +46,10 @@ export function PaymentsView({ initialPayments, invoices }: PaymentsViewProps) {
   const [method, setMethod] = useState("MVOLA");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
+
+  const selectedInvoice = invoices.find((i) => i.id === invoiceId) || invoices[0];
+  const currentCurrency = selectedInvoice?.currency || "Ar";
+  const currencySym = getCurrencySymbol(currentCurrency);
 
   const handleInvoiceChange = (id: string) => {
     setInvoiceId(id);
@@ -85,7 +89,11 @@ export function PaymentsView({ initialPayments, invoices }: PaymentsViewProps) {
     }
   };
 
-  const totalCollected = payments.reduce((sum, p) => sum + p.amount, 0);
+  const totalsByCurrency: Record<string, number> = {};
+  payments.forEach((p) => {
+    const cur = p.invoice?.currency || "Ar";
+    totalsByCurrency[cur] = (totalsByCurrency[cur] || 0) + p.amount;
+  });
 
   const filtered = payments.filter((p) => {
     const matchesSearch =
@@ -126,7 +134,17 @@ export function PaymentsView({ initialPayments, invoices }: PaymentsViewProps) {
           </div>
           <div>
             <span className="text-xs font-semibold text-slate-400 uppercase">Total Encaissé</span>
-            <p className="text-xl font-bold text-slate-900">{formatAriary(totalCollected)}</p>
+            <div className="flex flex-wrap gap-2 items-baseline">
+              {Object.keys(totalsByCurrency).length > 0 ? (
+                Object.entries(totalsByCurrency).map(([cur, tot]) => (
+                  <p key={cur} className="text-xl font-bold text-slate-900">
+                    {formatCurrency(tot, cur)}
+                  </p>
+                ))
+              ) : (
+                <p className="text-xl font-bold text-slate-900">{formatAriary(0)}</p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -212,7 +230,7 @@ export function PaymentsView({ initialPayments, invoices }: PaymentsViewProps) {
                   </td>
                   <td className="p-4 font-mono text-slate-500">{p.reference || "-"}</td>
                   <td className="p-4 text-right font-extrabold text-sm text-emerald-700">
-                    +{formatAriary(p.amount)}
+                    +{formatCurrency(p.amount, p.invoice?.currency || "Ar")}
                   </td>
                   <td className="p-4 text-right">
                     <button
@@ -250,11 +268,11 @@ export function PaymentsView({ initialPayments, invoices }: PaymentsViewProps) {
                   required
                   value={invoiceId}
                   onChange={(e) => handleInvoiceChange(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none font-medium"
                 >
                   {invoices.map((inv) => (
                     <option key={inv.id} value={inv.id}>
-                      {inv.invoiceNumber} — {inv.client?.company || inv.client?.name} (Reste: {formatAriary(inv.remainingAmount)})
+                      {inv.invoiceNumber} — {inv.client?.company || inv.client?.name} (Reste: {formatCurrency(inv.remainingAmount, inv.currency || "Ar")})
                     </option>
                   ))}
                 </select>
@@ -262,14 +280,34 @@ export function PaymentsView({ initialPayments, invoices }: PaymentsViewProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Montant perçu (Ar) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={amount}
-                    onChange={(e) => setAmount(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-slate-700">
+                      Montant perçu ({currencySym}) *
+                    </label>
+                    {selectedInvoice && (
+                      <span className="text-[10px] font-bold text-brand-800 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-200">
+                        Devise : {selectedInvoice.currency || "Ar"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="any"
+                      required
+                      value={amount}
+                      onChange={(e) => setAmount(Number(e.target.value))}
+                      className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold text-slate-900 pr-12 focus:bg-white focus:ring-2 focus:ring-brand-500"
+                    />
+                    <span className="absolute right-3 top-2.5 text-xs font-black text-brand-800 pointer-events-none">
+                      {currencySym}
+                    </span>
+                  </div>
+                  {selectedInvoice && (
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Reste à régler : <strong className="text-slate-800">{formatCurrency(selectedInvoice.remainingAmount, selectedInvoice.currency || "Ar")}</strong>
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Mode de règlement *</label>
