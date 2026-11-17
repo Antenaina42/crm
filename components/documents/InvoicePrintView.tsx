@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Printer,
   Send,
@@ -47,8 +47,25 @@ export function InvoicePrintView({ invoice, companySettings }: InvoicePrintViewP
     setTimeout(() => setCopiedSignLink(false), 2500);
   };
 
+  const clientName = invoice.client?.company || invoice.client?.name || "Client";
+  const cleanClientName = clientName.replace(/[/\\?%*:|"<>]/g, " ").trim();
+  const pdfTitle = `Facture - ${cleanClientName} - M-It LevelUp`;
+
+  useEffect(() => {
+    const originalTitle = document.title;
+    document.title = pdfTitle;
+    return () => {
+      document.title = originalTitle;
+    };
+  }, [pdfTitle]);
+
   const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = pdfTitle;
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
   };
 
   const handleRecordPayment = async (e: React.FormEvent) => {
@@ -274,27 +291,25 @@ export function InvoicePrintView({ invoice, companySettings }: InvoicePrintViewP
           {/* Bloc Gauche */}
           <div className="space-y-4 print:space-y-1.5">
             {/* Logo Officiel M-It LevelUP */}
-            <div className="mb-2">
-              <div className="relative w-64 h-16 print:w-56 print:h-14">
-                <Image
-                  src="/logo-official.jpg"
-                  alt="M-It LevelUP — Transformation Digitale"
-                  width={240}
-                  height={64}
-                  className="object-contain object-left"
-                  priority
-                />
-              </div>
+            <div className="mb-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo-official.jpg"
+                alt="M-It LevelUP — Transformation Digitale"
+                className="w-56 sm:w-64 max-w-full h-auto block object-contain"
+              />
             </div>
 
             {/* Date */}
-            <div className="text-sm print:text-xs font-bold tracking-wide">
+            <div className="text-sm print:text-xs font-bold tracking-wide pt-1">
               DATE : {formatDate(invoice.date)}
             </div>
 
             {/* Émetteur */}
-            <div className="text-xs print:text-[11px] space-y-0.5 text-slate-800">
-              <p className="font-extrabold text-sm print:text-xs uppercase tracking-tight">ÉMETTEUR :</p>
+            <div className="text-xs print:text-[11px] space-y-0.5 text-slate-800 pt-1">
+              <p className="font-extrabold text-sm print:text-xs uppercase tracking-tight text-slate-950">
+                ÉMETTEUR :
+              </p>
               <p className="font-bold text-slate-900">
                 {companySettings?.managerName || "Miora Antenaina RAZAKATIANA"}
               </p>

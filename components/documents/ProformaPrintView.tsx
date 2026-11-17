@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Printer,
@@ -43,20 +43,31 @@ export function ProformaPrintView({ proforma, companySettings }: ProformaPrintVi
     setTimeout(() => setCopiedSignLink(false), 2500);
   };
 
-  const handlePrint = () => {
-    const originalTitle = document.title;
-    document.title = "";
-    window.print();
-    setTimeout(() => {
-      document.title = originalTitle;
-    }, 1000);
-  };
-
   const recipientName =
     proforma.client?.company ||
     proforma.client?.name ||
     `${proforma.prospect?.firstName || ""} ${proforma.prospect?.lastName || ""}`.trim() ||
     "Client Partenaire";
+
+  const cleanClientName = recipientName.replace(/[/\\?%*:|"<>]/g, " ").trim();
+  const pdfTitle = `Facture proforma - ${cleanClientName} - M-It LevelUp`;
+
+  useEffect(() => {
+    const originalTitle = document.title;
+    document.title = pdfTitle;
+    return () => {
+      document.title = originalTitle;
+    };
+  }, [pdfTitle]);
+
+  const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = pdfTitle;
+    window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
+  };
 
   const recipientPhone =
     proforma.client?.whatsapp ||
@@ -242,21 +253,17 @@ export function ProformaPrintView({ proforma, companySettings }: ProformaPrintVi
           {/* Bloc Gauche : Logo, Date, Émetteur */}
           <div className="space-y-3 flex-1">
             {/* Logo Officiel M-It LevelUP */}
-            <div className="mb-2">
-              <div className="relative w-64 h-16 print:w-56 print:h-14">
-                <Image
-                  src="/logo-official.jpg"
-                  alt="M-It LevelUP — Transformation Digitale"
-                  width={240}
-                  height={64}
-                  className="object-contain object-left"
-                  priority
-                />
-              </div>
+            <div className="mb-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo-official.jpg"
+                alt="M-It LevelUP — Transformation Digitale"
+                className="w-56 sm:w-64 max-w-full h-auto block object-contain"
+              />
             </div>
 
             {/* Date */}
-            <div className="text-xs font-bold tracking-wide text-slate-900 space-y-0.5">
+            <div className="text-xs font-bold tracking-wide text-slate-900 space-y-0.5 pt-1">
               <p>DATE : {formatDate(proforma.date)}</p>
               <p className="text-[11px] font-semibold text-slate-500">
                 DATE D'EXPIRATION : {formatDate(proforma.validityDate)} (30 jours)
@@ -264,7 +271,7 @@ export function ProformaPrintView({ proforma, companySettings }: ProformaPrintVi
             </div>
 
             {/* Émetteur */}
-            <div className="text-[11px] space-y-0.5 text-slate-800">
+            <div className="text-[11px] space-y-0.5 text-slate-800 pt-1">
               <p className="font-extrabold text-xs uppercase tracking-tight text-slate-950">
                 ÉMETTEUR :
               </p>

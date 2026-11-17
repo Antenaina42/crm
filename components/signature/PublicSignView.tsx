@@ -193,6 +193,28 @@ export function PublicSignView({
     }
   };
 
+  const handlePrintCert = () => {
+    const originalTitle = document.title;
+    const clientName =
+      doc.client?.company ||
+      doc.client?.name ||
+      doc.prospect?.company ||
+      `${doc.prospect?.firstName || ""} ${doc.prospect?.lastName || ""}`.trim() ||
+      "Client";
+    const cleanClientName = clientName.replace(/[/\\?%*:|"<>]/g, " ").trim();
+    const docTypeLabel =
+      type === "INVOICE"
+        ? "Facture"
+        : type === "PROFORMA"
+        ? "Facture proforma"
+        : "Contrat";
+    document.title = `${docTypeLabel} - ${cleanClientName} - M-It LevelUp`;
+    window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
+  };
+
   const docTitle =
     type === "INVOICE"
       ? `Facture ${doc.invoiceNumber}`
@@ -213,14 +235,12 @@ export function PublicSignView({
         {/* Brand Header */}
         <div className="flex items-center justify-between bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="relative w-52 h-12">
-              <Image
+            <div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/logo-official.jpg"
                 alt="M-It LevelUP — Transformation Digitale"
-                width={208}
-                height={48}
-                className="object-contain object-left"
-                priority
+                className="h-10 sm:h-12 w-auto object-contain block"
               />
             </div>
           </div>
@@ -464,7 +484,7 @@ export function PublicSignView({
               </div>
 
               <button
-                onClick={() => window.print()}
+                onClick={handlePrintCert}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors shadow-sm"
               >
                 <Printer className="w-4 h-4" />
